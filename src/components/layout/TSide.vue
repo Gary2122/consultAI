@@ -16,7 +16,7 @@
     <div class="bg-blue pt-12 pl-12 pr-4 pb-12 mt-16 br-12">
       <el-scrollbar style="height: calc(100vh - 197px)">
         <div class="pr-8" v-for="item in chatList">
-          <SideItem :title="item.title" />
+          <SideItem :title="item.title" @editItemName="editCurItem" />
         </div>
       </el-scrollbar>
     </div>
@@ -47,5 +47,10 @@ const chatList = ref([
 const addNewChat = (item: any) => {
   let p = { title: item };
   chatList.value.push(p);
+};
+const editCurItem = (item: any) => {
+  console.log(item);
+
+  chatList.value[item.index].title = item.value;
 };
 </script>
