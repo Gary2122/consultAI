@@ -1,0 +1,45 @@
+// @import '//at.alicdn.com/t/c/font_4474747_nhgmu2dyqi.css'; //GPTalk
+// @import '//at.alicdn.com/t/c/font_4474761_bsb3ops8mi8.css'; //Designer
+// @import '//at.alicdn.com/t/c/font_4474766_lus40rkw8e.css'; //MB
+// @import '//at.alicdn.com/t/c/font_4475027_is4ixy1s7r.css'; //Red
+@import '//at.alicdn.com/t/c/font_4133514_bb0s7qbd8me.css'; //Color
+// @import '//at.alicdn.com/t/c/font_4474692_6h4qym1dzem.css'; //BlueAI
+@import '//at.alicdn.com/t/c/font_4099091_5zig3ixhjau.css';
+
+// 分开 防止unicode冲突
+// [class^='iconG-'],//GPTalk
+// [class^='iconD-'],//Designer
+// [class^='iconM-'],//MB
+// [class^='iconS-'],//Red
+[class^='iconC-'],//Color
+[class^='icon-']//BlueAI
+{
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  vertical-align: baseline;
+  display: inline-block;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+// [class^='iconG-'] {
+//   font-family: 'iconfontG';
+// }
+// [class^='iconD-'] {
+//   font-family: 'iconfontD';
+// }
+// [class^='iconM-'] {
+//   font-family: 'iconfontM';
+// }
+// [class^='iconS-'] {
+//   font-family: 'iconfontS';
+// }
+// [class^='iconC-'] {
+//   font-family: 'iconfontC';
+// }
+[class^='icon-'] {
+  font-family: 'iconfont';
+}

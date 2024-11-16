@@ -1,0 +1,11 @@
+@function getColor($color, $opacity, $isOpacity: 1) {
+  @if $isOpacity==1 {
+    @return transparentize($color, $opacity);
+  } @else {
+    @return mix($color, $cWhite, $opacity);
+  }
+}
+
+@function getSize($num, $unit: 'px') {
+  @return #{$num + $unit};
+}

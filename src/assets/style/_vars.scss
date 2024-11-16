@@ -1,0 +1,101 @@
+$fontFamily: /*西文*/
+  -apple-system,
+  BlinkMacSystemFont,
+  Segoe UI,
+  Roboto,
+  Ubuntu,
+  Helvetica Neue,
+  Helvetica,
+  Arial,
+  /*中文*/ PingFang SC,
+  Hiragino Sans GB,
+  Microsoft YaHei UI,
+  Microsoft YaHei,
+  Source Han Sans CN,
+  sans-serif;
+$fontSize: 14px;
+$lineHeight: calc(20 / 14);
+// 过渡
+$duration: 0.2s all ease-in-out;
+
+$cBlack: #000;
+$cWhite: #fff;
+$cPrimary: #443ef7;
+$cPrimaryH: #2525cf;
+$cPrimaryL: #6060ff;
+$cPrimaryL2: #ebefff;
+$cSuccess: #28ce8e;
+$cSuccessH: #28ce8e;
+$cSuccessL: #28ce8e;
+$cSuccessL2: #e4fcf3;
+$cWarning: #fb942d;
+$cWarningH: #fb942d;
+$cWarningL: #fb942d;
+$cWarningL2: #fb942d;
+$cDanger: #ff5233;
+$cDangerH: #d94026;
+$cDangerL: #ff755d;
+$cDangerL2: #ffeae6;
+$cText: #090e29;
+$cTextL: #5b6799;
+$cTextL2: #a0a9c5;
+$cTextL3: #d8dff0;
+$cTextL4: #ebefff;
+$cTextL5: #f5f7fc;
+
+/* element-plus*/
+@forward 'element-plus/theme-chalk/src/common/var.scss' with (
+  $colors: (
+    'primary': (
+      'base': $cPrimary,
+    ),
+    'danger': (
+      'base': $cDanger,
+    ),
+    'success': (
+      'base': $cSuccess,
+    ),
+  ),
+  $text-color: (
+    'primary': $cText,
+    'regular': $cTextL,
+    'secondary': $cTextL2,
+    'placeholder': $cTextL2,
+    'disabled': $cTextL2,
+  ),
+  $disabled: (
+    'color': $cTextL2,
+    'bg-color': $cTextL5,
+    'border-color': $cTextL3,
+  ),
+  $button-border-radius: (
+    'large': 8px,
+    'default': 6px,
+  ),
+  $button-padding-vertical: (
+    'large': 12px,
+    'default': 8px,
+  ),
+
+  $button-padding-horizontal: (
+    'large': 16px,
+    'default': 12px,
+  ),
+  $common-component-size: (
+    'large': 44px,
+    'default': 36px,
+  ),
+  $input: (
+    'border-color': #d8dff0,
+    'hover-border-color': #a0a9c5,
+    'border-radius': 6px,
+    'text-color': $cText,
+  ),
+  $checkbox: (
+    'checked-text-color': $cPrimary,
+    'checked-input-border-color': $cPrimary,
+    'checked-bg-color': $cPrimary,
+    'input-border-color-hover': $cPrimary,
+  )
+);
+@use "element-plus/theme-chalk/src/index.scss" as *;

@@ -1,0 +1,109 @@
+@use 'sass:math';
+$loader-color: #0052ec !default;
+$loader-size: 56px !default;
+$loader-height: 20px !default;
+$loader-border-size: 8px !default;
+$loader-gap: 12px !default;
+$loader-animation-duration: 1s !default;
+@mixin loader-rotate {
+  @keyframes loader-rotate {
+    0% {
+      transform: rotate(0);
+    }
+
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+}
+
+@mixin loader-scale {
+  @keyframes loader-scale {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+
+    50% {
+      opacity: 1;
+    }
+
+    100% {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
+}
+
+@mixin loader08($size: $loader-size, $color: $loader-color, $duration: $loader-animation-duration, $gap: $loader-gap, $align: null) {
+  $unique-name: unique-id();
+  width: $size;
+  height: $size;
+  position: relative;
+  animation: #{'loader08-'}#{$unique-name} $duration ease infinite;
+  @if ($align == center) {
+    margin: 0 auto;
+  }
+  @if ($align == middle) {
+    top: 50%;
+    margin: -($size * 2 + $gap) auto 0;
+  }
+  @keyframes #{'loader08-'}#{$unique-name} {
+    0%,
+    100% {
+      box-shadow: // top left
+        -(math.div($size, 2) + math.div($gap, 2)) $size 0 $color,
+        // top right
+        (math.div($size, 2) + math.div($gap, 2)) $size 0 rgba($color, 0.2),
+        // bottom right
+        (math.div($size, 2) + math.div($gap, 2)) (($size * 2) + $gap) 0 rgba($color, 0.2),
+        // bottom left
+        -(math.div($size, 2) + math.div($gap, 2)) (($size * 2) + $gap) 0 rgba($color, 0.2);
+    }
+
+    25% {
+      box-shadow: // top left
+        -(math.div($size, 2) + math.div($gap, 2)) $size 0 rgba($color, 0.2),
+        // top right
+        (math.div($size, 2) + math.div($gap, 2)) $size 0 $color,
+        // bottom right
+        (math.div($size, 2) + math.div($gap, 2)) (($size * 2) + $gap) 0 rgba($color, 0.2),
+        // bottom left
+        -(math.div($size, 2) + math.div($gap, 2)) (($size * 2) + $gap) 0 rgba($color, 0.2);
+    }
+
+    50% {
+      box-shadow: // top left
+        -(math.div($size, 2) + math.div($gap, 2)) $size 0 rgba($color, 0.2),
+        // top right
+        (math.div($size, 2) + math.div($gap, 2)) $size 0 rgba($color, 0.2),
+        // bottom right
+        (math.div($size, 2) + math.div($gap, 2)) (($size * 2) + $gap) 0 $color,
+        // bottom left
+        -(math.div($size, 2) + math.div($gap, 2)) (($size * 2) + $gap) 0 rgba($color, 0.2);
+    }
+
+    75% {
+      box-shadow: // top left
+        -(math.div($size, 2) + math.div($gap, 2)) $size 0 rgba($color, 0.2),
+        // top right
+        (math.div($size, 2) + math.div($gap, 2)) $size 0 rgba($color, 0.2),
+        // bottom right
+        (math.div($size, 2) + math.div($gap, 2)) (($size * 2) + $gap) 0 rgba($color, 0.2),
+        // bottom left
+        -(math.div($size, 2) + math.div($gap, 2)) (($size * 2) + $gap) 0 $color;
+    }
+  }
+}
+
+.loading_1 {
+  &:before {
+    content: '';
+    display: block;
+    @include loader08(20px, $cPrimary, 1s, 4px, middle);
+  }
+}
+
+.loading_2 {
+  @include loader08(11px, $cPrimary, 1s, 4px, middle);
+}

@@ -1,0 +1,54 @@
+@keyframes beat {
+  0% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(1);
+  }
+  80% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+@keyframes progressmove {
+  0% {
+    margin-left: 0;
+  }
+  100% {
+    margin-left: -890px;
+  }
+  //100% {
+  //  margin-left: 0;
+  //
+  //}
+}
+@keyframes slide {
+  0% {
+    transform: translateY(0%);
+  }
+  50% {
+    transform: translateY(100%);
+  }
+  100% {
+    transform: translateY(0%);
+  }
+}
+@keyframes show {
+  0% {
+    opacity: 0;
+  }
+  0.5% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  50.5% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}

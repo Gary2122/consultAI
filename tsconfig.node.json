@@ -1,0 +1,31 @@
+{
+  "include": [
+    "vite.config.*",
+    // "vitest.config.*",
+    // "cypress.config.*",
+    // "nightwatch.conf.*",
+    // "playwright.config.*",
+    "config/*"
+  ],
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "composite": true,
+    /* Bundler mode */
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  }
+  // "include": ["vite.config.ts"]
+}

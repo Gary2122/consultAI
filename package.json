@@ -1,0 +1,37 @@
+{
+  "name": "my-vue3-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@unocss/preset-rem-to-px": "^0.63.6",
+    "element-plus": "^2.8.7",
+    "lottie-web": "^5.12.2",
+    "mixin": "^0.2.0",
+    "normalize.css": "^8.0.1",
+    "path": "^0.12.7",
+    "pinia": "^2.2.6",
+    "pinia-plugin-persist": "^1.0.0",
+    "vue": "^3.5.12",
+    "vue-router": "^4.4.5",
+    "vue3-lottie": "^3.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.8.7",
+    "@vitejs/plugin-vue": "^5.1.4",
+    "postcss": "^8.4.32",
+    "sass": "^1.77.6",
+    "typescript": "~5.6.2",
+    "unocss": "^0.63.6",
+    "unplugin-auto-import": "^0.18.3",
+    "unplugin-element-plus": "^0.8.0",
+    "unplugin-vue-components": "^0.27.4",
+    "vite": "^5.4.9",
+    "vue-tsc": "^2.1.6"
+  }
+}

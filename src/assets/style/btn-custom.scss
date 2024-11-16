@@ -1,0 +1,502 @@
+@mixin btnBase() {
+  display: inline-flex;
+  &:is(div) {
+    display: flex;
+  }
+
+  cursor: pointer;
+  transition: 0.2s all ease-in-out;
+  user-select: none;
+  justify-content: center;
+  align-items: center;
+  &.isDisabled,
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+// 背景色 active色 hover色背景色/Plain的时候的字体色  Plain的时候hover背景色 字体在正常时是白色 Plain时 背景是白色
+@mixin genBtn($color, $colorH, $colorL, $colorL2) {
+  @include btnBase;
+  height: 36px;
+  background: $color;
+  border: 1px solid $color;
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: #fff;
+  & + & {
+    margin-left: 16px;
+  }
+  &._large {
+    border-radius: 8px;
+    padding: 12px 16px;
+    height: 44px;
+  }
+  &:hover,
+  &.isHover {
+    background: $colorL;
+    border-color: $colorL;
+  }
+  &:active,
+  &.isActive,
+  &:focus,
+  &.isFocus {
+    background: $colorH;
+    border-color: $colorH;
+  }
+  &.isDisabled,
+  &._isPlain {
+    color: $color;
+    background: #fff;
+    &:hover,
+    &.isHover {
+      color: $colorL;
+      background: $colorL2;
+    }
+    &:active,
+    &.isActive,
+    &:focus,
+    &.isFocus {
+      background: $colorL2;
+      border-color: $colorH;
+
+      color: $colorH;
+    }
+  }
+  &._isBg,
+  &._isBgL {
+    background: #f5f7fc;
+    border: 1px solid #f5f7fc;
+
+    &:hover,
+    &.isHover {
+      background: $colorL2;
+      border-color: $colorL2;
+
+      color: $colorL;
+    }
+    &:active,
+    &.isActive,
+    &:focus,
+    &.isFocus {
+      background: $colorL2;
+      border-color: $colorL2;
+
+      color: $colorH;
+    }
+  }
+  &._isBg {
+    color: $cText;
+  }
+  &._isBgL {
+    color: $cTextL;
+  }
+  &._isBgIcon {
+    @extend ._isBg;
+    color: inherit;
+    background: transparent;
+    border: 1px solid transparent;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+  }
+  &._isLink {
+    height: auto;
+    font-weight: 500;
+    padding: 0;
+    border: 0;
+    background: initial;
+    color: $color;
+    &:hover,
+    &.isHover {
+      color: $colorL;
+    }
+    &:active,
+    &.isActive,
+    &:focus,
+    &.isFocus {
+      color: $colorH;
+    }
+  }
+  &:disabled,
+  &.isDisabled,
+  &._isPlain:disabled,
+  &._isBg:disabled,
+  &._isBgIcon:disabled {
+    background: #d8dff0;
+    color: #a0a9c5;
+    border-color: #d8dff0;
+  }
+  &._isLink:disabled,
+  &._isLink.isDisabled {
+    color: #a0a9c5;
+    background: initial;
+    border: 0;
+    cursor: not-allowed;
+  }
+  &._isBgIcon:disabled,
+  &._isBgIcon.isDisabled {
+    background: transparent;
+    color: #a0a9c5;
+    border-color: transparent;
+    &:hover {
+      background: #d8dff0;
+      color: #a0a9c5;
+      border-color: #d8dff0;
+    }
+  }
+  &._noPadding {
+    padding: 0;
+  }
+}
+@mixin genFullBtn(
+  $textC: $cWhite,
+  $bgC: $cPrimary,
+  $bdC: $cPrimary,
+  $hTextC: $cWhite,
+  $hBgc: $cPrimaryL,
+  $hBdC: $cPrimaryL,
+  $aTextC: $cWhite,
+  $aBgc: $cPrimaryH,
+  $aBdC: $cPrimaryH,
+  $dTextC: $cTextL2,
+  $dBgc: $cTextL3,
+  $dBdC: $cTextL3,
+  $padding: 6px 12px,
+  $radius: 6px,
+  $font-size: 14px,
+  $font-weight: 450,
+  $box-shadow: none,
+  $border-style: solid
+) {
+  @include btnBase;
+  padding: $padding;
+  border-radius: $radius;
+  font-size: $font-size;
+  font-weight: $font-weight;
+  box-shadow: $box-shadow;
+  color: $textC;
+  background: $bgC;
+  border-width: 1px;
+  border-color: $bdC;
+  border-style: $border-style;
+  &.isHover,
+  &:hover {
+    background: $hBgc;
+    border-color: $hBdC;
+    color: $hTextC;
+  }
+  &.isActive,
+  &:active {
+    background: $aBgc;
+    border-color: $aBdC;
+    color: $aTextC;
+  }
+  &.isDisabled,
+  &:disabled {
+    background: $dBgc;
+    border-color: $dBdC;
+    color: $dTextC;
+  }
+}
+:root {
+  .btn-primary {
+    @include genBtn($cPrimary, $cPrimaryH, $cPrimaryL, $cPrimaryL2);
+  }
+  .btn-danger {
+    @include genBtn($cDanger, $cDangerH, $cDangerL, $cDangerL2);
+  }
+  .btn-default {
+    @include genBtn($cTextL3, $cTextL4, $cTextL4, #fff);
+  }
+  .btn-info2 {
+    @include genBtn($cTextL2, $cPrimary, $cPrimaryL, #fff);
+  }
+  .btn-info {
+    @include genBtn($cText, $cPrimary, $cPrimaryL, $cPrimaryL2);
+    border: 1px solid $cTextL3;
+    &._isPlain {
+      background-color: transparent;
+    }
+  }
+  .btn-info3 {
+    @include genBtn($cText, $cPrimary, $cPrimaryL, $cPrimaryL2);
+    border: 1px solid $cTextL3;
+  }
+  .btn-infoL {
+    @include genBtn($cTextL, $cPrimary, $cPrimaryL, $cPrimaryL2);
+    border: 1px solid $cTextL3;
+    &._isPlain {
+      background-color: transparent;
+    }
+  }
+  .btn-infoL2 {
+    @include genBtn($cTextL2, $cPrimary, $cPrimaryL, $cPrimaryL2);
+    border: 1px solid $cTextL3;
+    &._isPlain {
+      background-color: transparent;
+    }
+  }
+  .btn-infoL3 {
+    @include genBtn($cTextL3, $cPrimary, $cPrimaryL, $cPrimaryL2);
+    border: 1px solid $cTextL3;
+  }
+  .btn-upload_dashed {
+    @include genFullBtn(
+      $cTextL,
+      $cTextL5,
+      $cTextL3,
+      $cPrimary,
+      $cPrimaryL2,
+      $cPrimary,
+      $cPrimaryH,
+      $cPrimaryL2,
+      $cPrimaryH,
+      $cTextL2,
+      $cTextL5,
+      $cTextL4,
+      13px,
+      8px,
+      14px,
+      450,
+      none,
+      dashed
+    );
+  }
+}
+.btn-new {
+  @include btnBase;
+  position: relative;
+  color: #fff;
+  width: 208px;
+  height: 44px;
+  opacity: 1;
+  overflow: hidden;
+  background: #443ef7;
+  border-radius: 8px;
+  .btn-new-text {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    padding: 0 12px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+  }
+  &:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    //width: 320px;
+    //background: linear-gradient(135deg, #00E5E4 0%, #1F52F1 14.28%, #B000FF 38%, #DF009A 60%, #1F52F1 79%, #00E5E4 100%,#B000FF 100%);
+    transition: 0.2s all ease-in-out;
+    opacity: 0;
+    width: 2080px;
+    background: linear-gradient(
+      90deg,
+      #443ef7 0%,
+      #443ef7 10%,
+      #bb20da 20%,
+      #f50ea5 30%,
+      #bb20da 40%,
+      #443ef7 50%,
+      #18abeb 60%,
+      #0bd8d9 70%,
+      #18abeb 80%,
+      #443ef7 90%,
+      #443ef7 100%
+    );
+    // background: linear-gradient(
+    //   90deg,
+    //   #00e5e4 0%,
+    //   #443ef7 17%,
+    //   #b000ff 32%,
+    //   #df009a 46%,
+    //   #443ef7 63%,
+    //   #00e5e4 81%,
+    //   #443ef7 100%
+    // );
+  }
+  &:hover {
+    animation: beat 0.25s cubic-bezier(0.4, 0, 0.2, 1) 1 forwards;
+    &:before {
+      opacity: 1;
+      animation: progressmove 4s linear infinite;
+    }
+  }
+}
+
+.btn-dropdown {
+  background-color: #fff;
+  border: 1px solid $cTextL3;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1;
+  &:hover {
+    border-color: $cTextL2;
+  }
+  &:active {
+    border-color: $cPrimary;
+  }
+  &.disabled {
+    background-color: $cTextL5;
+    cursor: not-allowed;
+    border-color: $cTextL3;
+  }
+}
+
+.btn-text {
+  cursor: pointer;
+  color: $cTextL2;
+  &:hover {
+    color: $cPrimary;
+  }
+  &:active {
+    color: $cPrimaryH;
+  }
+}
+// 按钮u基础
+.btn-baseD {
+  cursor: pointer;
+  transition: 0.2s all ease-in-out;
+  user-select: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  &.isDisabled,
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+// 灰底黑字
+.btn-infoD {
+  @extend .btn-baseD;
+  cursor: pointer;
+  background: #f1f2f5;
+  color: #000;
+  &:hover {
+    background: #e9eaef;
+  }
+  &.isActive,
+  &:active {
+    background: #dedfe5;
+  }
+  &.isDisabled,
+  &:disabled {
+    background: #f7f8fa;
+    color: $cTextL3;
+  }
+}
+// 白底黑字
+.btn-infoD2 {
+  @extend .btn-baseD;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #ffffff;
+  border-radius: 6px;
+  &:hover,
+  &.isActive,
+  &:active {
+    background: #ffffff;
+  }
+}
+// 渐变边框白底黑字
+.btn-primaryD {
+  @extend .btn-baseD;
+  color: #000;
+  background: linear-gradient(315deg, #4a79f6 0%, #4c5af5 54%, #5037f4 100%);
+  border-radius: 8px;
+  padding: 2px;
+  transition: $duration;
+  & > div {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(315deg, #fff 0%, #fff 100%);
+    border-radius: 6px;
+  }
+  &:hover {
+    & > div {
+      background: linear-gradient(315deg, #d8e2ff 0%, #e9e6ff 100%);
+    }
+  }
+  &.isActive,
+  &:active {
+    & > div {
+      background: linear-gradient(315deg, #8eacfc 0%, #c0b8fc 100%);
+    }
+  }
+  &.isDisabled,
+  &:disabled {
+    background: #d8dff0;
+    & > div {
+      color: $cTextL;
+      background: #fff;
+    }
+  }
+}
+// 主题色底白字
+.btn-primaryD_full {
+  @extend .btn-baseD;
+  color: #fff;
+  background: #1f52f1;
+  border-radius: 4px;
+
+  &:hover {
+    background: #416efc;
+  }
+  &.isActive,
+  &:active {
+    background: #1345e0;
+  }
+  &.isDisabled,
+  &:disabled {
+    background: $cTextL4;
+    color: $cTextL3;
+  }
+}
+
+.el-button.el-button--primary {
+  background-color: #443ef7;
+}
+.el-button.el-button--primary span {
+  color: #ffffff;
+}
+.el-button.el-button--primary:active {
+  background-color: #2525cf;
+}
+.el-button.el-button--primary:hover {
+  background-color: #6060ff;
+}
+.el-button.el-button--primary.el-button--small {
+  border: 0px !important;
+  background-color: transparent;
+}
+.el-button.el-button--primary.el-button--small span {
+  border: 0px !important;
+  color: #443ef7;
+}
+.el-button.el-button--primary.el-button--small:hover {
+  border: 0px !important;
+  background-color: transparent !important;
+}
+.el-button.el-button--primary.el-button--small:active {
+  border: 0px !important;
+  background-color: transparent !important;
+}
+.el-button.el-button--primary.el-button--small:hover span {
+  border: 0px !important;
+  color: #6060ff;
+}
+.el-button.el-button--primary.el-button--small:active span {
+  color: #2525cf;
+  border: 0px !important;
+}
+.el-icon.el-dialog__close:hover svg path {
+  color: #2525cf;
+}

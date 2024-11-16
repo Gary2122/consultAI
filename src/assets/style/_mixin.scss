@@ -1,0 +1,93 @@
+@mixin flexHandler(
+  $flex: flex,
+  $jc: flex-start,
+  $ai: stretch,
+  $isCol: 0,
+  $isWarp: 0
+) {
+  display: $flex;
+  justify-content: $jc;
+  align-items: $ai;
+  @if $isCol!=0 {
+    flex-direction: column;
+  }
+  @if $isWarp!=0 {
+    flex-wrap: wrap;
+  }
+}
+
+@mixin btnCommon(
+  $width: 0,
+  $height: 0,
+  $fontSize: 14px,
+  $color: $cText,
+  $bgColor: 0,
+  $borderColor: 0,
+  $borderRadius: 0,
+  $boxShadow: 0,
+  $isBold: 0
+) {
+  position: relative;
+  user-select: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: if($bgColor, $bgColor, transparent);
+  color: $color;
+  font-size: #{$fontSize}px;
+  @if $width == 0 and $height==0 {
+    width: max-content;
+    height: max-content;
+  } @else {
+    width: if($width==100%, 100%, #{$width}px);
+    height: #{$height}px;
+  }
+  @if $bgColor!=0 {
+    &:before {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+      //border: inherit;
+      border-color: #000;
+      border-radius: inherit;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      content: ' ';
+    }
+    &:active {
+      &:before {
+        opacity: 0.1;
+      }
+    }
+  } @else {
+    &:active {
+      color: mix($color, #000, 90%);
+    }
+  }
+  @if $borderColor != 0 {
+    border: 1px solid $borderColor;
+  }
+  @if $borderRadius!=0 {
+    border-radius: #{$borderRadius}px;
+  }
+  @if $boxShadow != 0 {
+    box-shadow: $boxShadow;
+  }
+  @if $isBold != 0 {
+    font-weight: 600;
+  }
+  &[disabled] {
+    cursor: not-allowed;
+    color: getColor($cText, 2);
+    @if $bgColor!=0 {
+      background: getColor($cText, 1);
+    }
+    @if $borderColor!=0 {
+      border-color: getColor($cText, 1);
+    }
+  }
+}
