@@ -1,15 +1,24 @@
 <style lang="scss" scoped>
 .sideItem {
-  &:hover {
-    opacity: 0.9;
+  &:hover .itemTitle {
+    color: rgb(61, 65, 71);
+  }
+  .edit {
+    &:hover {
+      opacity: 0.8;
+    }
   }
 }
 </style>
 
 <template>
-  <div class="sideItem h-44 br-8 cursor-pointer flex-cc bg-cPrimaryL2 mb-12">
+  <div
+    class="sideItem h-44 br-8 cursor-pointer flex-bc bg-cPrimaryL2 mb-12 pl-16 pr-16"
+  >
     <div class="itemTitle">{{ Props.title }}</div>
-    <i class="">icon-edit</i>
+    <div class="edit fs-22 p-4 bg-cTextL3 flex-cc br-4">
+      <i class="iconfont icon-bianji"></i>
+    </div>
   </div>
 </template>
 
