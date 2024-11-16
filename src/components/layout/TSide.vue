@@ -11,7 +11,7 @@
 <template>
   <div class="TSide w-248 h-full br-16">
     <div class="bg-blue p-12 br-12 mt-12">
-      <newChat></newChat>
+      <newChat @foundChat="addNewChat"></newChat>
     </div>
     <div class="bg-blue pt-12 pl-12 pr-4 pb-12 mt-16 br-12">
       <el-scrollbar style="height: calc(100vh - 197px)">
@@ -23,10 +23,6 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { ref } from "vue";
-import SideItem from "../home/sideItem.vue";
-import newChat from "../home/newChat.vue";
-
 const chatList = ref([
   {
     title: "项目1",
@@ -48,5 +44,8 @@ const chatList = ref([
     title: "项目6",
   },
 ]);
-// const addNewChat = () => {};
+const addNewChat = (item: any) => {
+  let p = { title: item };
+  chatList.value.push(p);
+};
 </script>
