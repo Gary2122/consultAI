@@ -1,27 +1,4 @@
-<style lang="scss" scoped>
-.newChatDialog {
-  :deep(.el-dialog) {
-    border-radius: 10px;
-    padding: 20px;
-    .el-dialog__footer {
-      padding-top: 12px;
-    }
-    .el-input__wrapper {
-      height: 42px;
-    }
-    .chatContainer {
-      .fade-enter-active,
-      .fade-leave-active {
-        transition: opacity 0.8s;
-      }
-      .fade-enter,
-      .fade-leave-to {
-        opacity: 0;
-      }
-    }
-  }
-}
-</style>
+<style lang="scss" scoped></style>
 <template>
   <div>
     <div
