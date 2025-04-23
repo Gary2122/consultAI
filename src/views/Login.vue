@@ -1,0 +1,113 @@
+<template>
+  <div class="login-container">
+    <el-card class="login-card">
+      <h2 class="login-title">心理聊天室登录</h2>
+      <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef">
+        <el-form-item prop="username">
+          <el-input v-model="loginForm.username" placeholder="请输入用户名" prefix-icon="el-icon-user"></el-input>
+        </el-form-item>
+        <el-form-item prop="password">
+          <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" prefix-icon="el-icon-lock"></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleLogin" class="login-button">登录</el-button>
+        </el-form-item>
+      </el-form>
+      <div class="register-link">
+        <router-link to="/register">还没有账号？立即注册</router-link>
+      </div>
+    </el-card>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { onMounted, reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { login } from '@/api/user';
+import type { FormInstance } from 'element-plus';
+
+const router = useRouter();
+const loginFormRef = ref<FormInstance | null>(null);
+
+interface LoginForm {
+  username: string;
+  password: string;
+}
+const loginForm = reactive<LoginForm>({
+  username: '',
+  password: ''
+});
+
+const loginRules = {
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+};
+
+const handleLogin = () => {
+  loginFormRef.value?.validate((valid) => {
+    if (valid) {
+      const { username, password } = loginForm;
+      // 这里应该调用登录接口，并处理返回结果
+      // 例如：
+      // axios.post('/api/login', { username, password }).then(response => {
+      //   localStorage.setItem('token', response.data.token);
+      //   router.replace('/index');
+      // }).catch(error => {
+      //   // 处理错误情况
+      // });
+      // localStorage.setItem('token', 'fake-token-123');
+      // router.replace('/index');
+      login(username, password).then(res => {
+        const { token, user } = res.data;
+        localStorage.setItem('token', token);
+        router.replace('/index');
+      })
+    }
+  });
+};
+// 检测是否登录过，如果是则自动跳转到首页
+const handleAutoLogin = () => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    router.replace('/index');
+  }
+}
+
+onMounted(() => {
+  handleAutoLogin();
+})
+</script>
+
+<style lang="scss" scoped>
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.login-card {
+  width: 400px;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.login-title {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #303133;
+}
+
+.login-button {
+  width: 100%;
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 10px;
+  color: #409eff;
+  font-size: 14px;
+}
+</style>

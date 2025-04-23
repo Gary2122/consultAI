@@ -1,0 +1,41 @@
+/* 全局样式 */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f5f7fa;
+}
+
+/* 卡片样式 */
+.el-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 按钮样式 */
+.el-button {
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.el-button:hover {
+  opacity: 0.8;
+}
+
+/* 表单样式 */
+.el-form-item {
+  margin-bottom: 20px;
+}
+
+.el-input {
+  width: 100%;
+}
+
+/* 链接样式 */
+a {
+  color: #409eff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
