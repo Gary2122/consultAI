@@ -3,7 +3,6 @@
   height: 100vh;
   min-width: 1240px;
   background: url("@/assets/img/home/bg-page.png") no-repeat center/cover;
-  // overflow: hidden;
   .header {
     backdrop-filter: blur(4px);
     position: sticky;
@@ -15,18 +14,21 @@
   .content {
     height: calc(100vh - 98px);
     padding: 20px 20px 10px 20px;
-    gap: 10px;
     .chatBox {
-      width: calc(100% - 500px - 248px);
-      background-color: aqua;
-      height: calc(100vh - 98px);
+      width: calc(100% - 500px);
+      height: calc(100vh - 138px);
       border-radius: 16px;
+      margin-left: -20px;
+      background-color: beige;
+      padding: 20px;
+      z-index: 10;
     }
     .AIChatBox {
       width: 500px;
-      height: calc(100vh - 98px);
+      height: calc(100vh - 138px);
       border-radius: 16px;
       background-color: aliceblue;
+      padding: 20px;
     }
   }
 }

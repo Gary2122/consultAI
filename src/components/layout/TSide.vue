@@ -1,34 +1,31 @@
 <style lang="scss" scoped>
 .TSide {
   height: calc(100vh - 98px);
-  background-color: var(--bg-color);
+  // background-color: var(--bg-color);
+  background-color: rgb(244, 183, 255);
   color: var(--text-color);
   transition: background-color 0.3s, color 0.3s;
-
+  border-top-left-radius: 16px;
+  border-bottom-left-radius: 16px;
   .bg-blue {
     background-color: var(--primary-color);
     transition: background-color 0.3s;
   }
-
-  .addChat {
-    &:hover {
-      opacity: 0.9;
-    }
+  .setting {
+    bottom: 100px;
   }
 }
 </style>
 <template>
-  <div class="TSide w-248 br-16">
-    <div class="bg-blue p-12 br-12">
-      <newChat></newChat>
+  <div class="TSide w-168 text-center position-relative pr-20">
+    <div class="flex-cc mt-20 mb-20"><img src="@/assets/img/home/avartal.jpg" width="45" alt=""></div>
+    <!-- 聊天导航部分 -->
+    <div class="">
+      <div>好友聊天</div>
+      <div>群组聊天</div>
+      <div>匿名空间</div>
     </div>
-    <div class="bg-blue pt-12 pl-12 pr-4 pb-3 mt-16 br-12">
-      <el-scrollbar style="height: calc(100vh - 197px)">
-        <div class="pr-8" v-for="item in chatList">
-          <SideItem :title="item.title" />
-        </div>
-      </el-scrollbar>
-    </div>
+    <div class="">系统设置</div>
   </div>
 </template>
 <script lang="ts" setup>
