@@ -1,3 +1,11 @@
+<!--
+ * @Descripttion: 
+ * @version: 
+ * @Author: Garrison
+ * @Date: 2025-04-13 20:44:12
+ * @LastEditors: sueRimn
+ * @LastEditTime: 2025-04-28 14:28:35
+-->
 <style lang="scss" scoped>
 .home {
   height: 100vh;
@@ -13,22 +21,21 @@
   }
   .content {
     height: calc(100vh - 98px);
-    padding: 20px 20px 10px 20px;
+    padding: 5px 20px 10px 20px;
     .chatBox {
-      width: calc(100% - 500px);
-      height: calc(100vh - 138px);
-      border-radius: 16px;
-      margin-left: -20px;
-      background-color: beige;
-      padding: 20px;
-      z-index: 10;
+      width: calc(100% - 670px);
+      height: calc(100vh - 98px);
+      border-bottom-right-radius: 16px;
+      border-top-right-radius: 16px;
+      overflow: hidden;
     }
     .AIChatBox {
-      width: 500px;
+      width: 650px;
       height: calc(100vh - 138px);
       border-radius: 16px;
-      background-color: aliceblue;
+      background-color: rgb(255, 255, 255);
       padding: 20px;
+      margin-left: 20px;
     }
   }
 }
@@ -51,5 +58,5 @@
 <script lang="ts" setup>
 import THeader from "@/components/layout/THeader.vue";
 import TSide from "@/components/layout/TSide.vue";
-import AIChat from "@/components/layout/AIChat.vue";
+import AIChat from "@/views/AIChat/index.vue";
 </script>

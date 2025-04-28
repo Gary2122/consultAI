@@ -1,16 +1,27 @@
 <template>
   <div class="login-container">
     <el-card class="login-card">
-      <h2 class="login-title">心理聊天室登录</h2>
+      <h2 class="login-title">weiLIng微聆</h2>
       <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef">
         <el-form-item prop="username">
-          <el-input v-model="loginForm.username" placeholder="请输入用户名" prefix-icon="el-icon-user"></el-input>
+          <el-input
+            v-model="loginForm.username"
+            placeholder="请输入用户名"
+            prefix-icon="el-icon-user"
+          ></el-input>
         </el-form-item>
         <el-form-item prop="password">
-          <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" prefix-icon="el-icon-lock"></el-input>
+          <el-input
+            v-model="loginForm.password"
+            type="password"
+            placeholder="请输入密码"
+            prefix-icon="el-icon-lock"
+          ></el-input>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleLogin" class="login-button">登录</el-button>
+          <el-button type="primary" @click="handleLogin" class="login-button"
+            >登录</el-button
+          >
         </el-form-item>
       </el-form>
       <div class="register-link">
@@ -21,10 +32,10 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { login } from '@/api/user';
-import type { FormInstance } from 'element-plus';
+import { onMounted, reactive, ref } from "vue";
+import { useRouter } from "vue-router";
+import { login } from "@/api/user";
+import type { FormInstance } from "element-plus";
 
 const router = useRouter();
 const loginFormRef = ref<FormInstance | null>(null);
@@ -34,13 +45,13 @@ interface LoginForm {
   password: string;
 }
 const loginForm = reactive<LoginForm>({
-  username: '',
-  password: ''
+  username: "",
+  password: "",
 });
 
 const loginRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  username: [{ required: true, message: "请输入用户名", trigger: "blur" }],
+  password: [{ required: true, message: "请输入密码", trigger: "blur" }],
 };
 
 const handleLogin = () => {
@@ -57,25 +68,25 @@ const handleLogin = () => {
       // });
       // localStorage.setItem('token', 'fake-token-123');
       // router.replace('/index');
-      login(username, password).then(res => {
+      login(username, password).then((res) => {
         const { token, user } = res.data;
-        localStorage.setItem('token', token);
-        router.replace('/index');
-      })
+        localStorage.setItem("token", token);
+        router.replace("/home");
+      });
     }
   });
 };
 // 检测是否登录过，如果是则自动跳转到首页
 const handleAutoLogin = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   if (token) {
-    router.replace('/index');
+    router.replace("/home");
   }
-}
+};
 
 onMounted(() => {
   handleAutoLogin();
-})
+});
 </script>
 
 <style lang="scss" scoped>
@@ -84,7 +95,8 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f5f7fa;
+  // background-color: #f5f7fa;
+  background: url("@/assets/img/user/loginBg.jpg") no-repeat center/cover;
 }
 
 .login-card {

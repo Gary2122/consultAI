@@ -12,6 +12,7 @@
     "@unocss/preset-rem-to-px": "^0.63.6",
     "axios": "^1.8.4",
     "element-plus": "^2.8.7",
+    "gsap": "^3.12.7",
     "lottie-web": "^5.12.2",
     "mixin": "^0.2.0",
     "normalize.css": "^8.0.1",
