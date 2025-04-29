@@ -5,9 +5,7 @@
   </div>
 </template>
 
-<script lang="ts" setup>
-// Properties component logic
-</script>
+<script lang="ts" setup></script>
 
 <style lang="scss" scoped>
 .properties-container {

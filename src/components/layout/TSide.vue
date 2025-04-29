@@ -168,7 +168,7 @@ const routerInfo = {
     {
       name: "群组聊天",
       icon: "iconfont icon-zizhanghao",
-      path: "/home/groups",
+      path: "/group",
       content: "群组聊天",
       routeClass: "server-icon",
       placement: "right",
@@ -176,7 +176,7 @@ const routerInfo = {
     {
       name: "匿名论坛",
       icon: "iconfont icon-fenxiang",
-      path: "/home/forum",
+      path: "/forum",
       content: "匿名论坛",
       routeClass: "server-icon",
       placement: "right",
@@ -185,7 +185,7 @@ const routerInfo = {
   settingRoute: {
     name: "个人设置",
     icon: "iconfont icon-xitongshezhi",
-    path: "/home/settings",
+    path: "/settings",
     content: "个人设置",
     routeClass: "setting-icon",
     placement: "right",

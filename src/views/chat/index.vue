@@ -19,16 +19,16 @@
       </div>
       <div class="chat-actions">
         <el-tooltip content="语音通话" placement="bottom">
-          <i class="el-icon-phone"></i>
+          <i class="iconfont icon-zizhanghao"></i>
         </el-tooltip>
         <el-tooltip content="视频通话" placement="bottom">
-          <i class="el-icon-video-camera"></i>
+          <i class="iconfont icon-zizhanghao"></i>
         </el-tooltip>
         <el-tooltip content="搜索" placement="bottom">
-          <i class="el-icon-search"></i>
+          <i class="iconfont icon-zizhanghao"></i>
         </el-tooltip>
         <el-tooltip content="更多" placement="bottom">
-          <i class="el-icon-more"></i>
+          <i class="iconfont icon-zizhanghao"></i>
         </el-tooltip>
       </div>
     </div>

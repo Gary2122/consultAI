@@ -7,25 +7,9 @@
  * @LastEditTime: 2025-04-27 13:45:23
 -->
 <template>
-  <div class="friends-container">
+  <div class="groups-container">
     <!-- 左侧好友/群组列表 -->
-    <div class="friends-left">
-      <!-- 顶部标签切换 -->
-      <div class="tabs-container">
-        <div
-          :class="['tab', activeTab === 'friends' ? 'active' : '']"
-          @click="activeTab = 'friends'"
-        >
-          好友
-        </div>
-        <div
-          :class="['tab', activeTab === 'groups' ? 'active' : '']"
-          @click="activeTab = 'groups'"
-        >
-          群组
-        </div>
-      </div>
-
+    <div class="groups-left">
       <!-- 搜索框 -->
       <div class="search-box">
         <el-input
@@ -35,46 +19,8 @@
           clearable
         />
       </div>
-
-      <!-- 好友列表 -->
-      <div v-if="activeTab === 'friends'" class="list-container">
-        <div class="list-header">
-          <span>在线好友 - {{ getOnlineFriends.length }}</span>
-        </div>
-        <div
-          v-for="friend in getOnlineFriends"
-          :key="friend.id"
-          :class="['list-item', selectedId === friend.id ? 'active' : '']"
-          @click="handleSelect(friend.id)"
-        >
-          <el-avatar :size="40" :src="friend.avatar" />
-          <div class="item-info">
-            <div class="item-name">{{ friend.name }}</div>
-            <div class="item-status">{{ friend.status }}</div>
-          </div>
-          <div class="status-dot online"></div>
-        </div>
-
-        <div class="list-header">
-          <span>离线好友 - {{ getOfflineFriends.length }}</span>
-        </div>
-        <div
-          v-for="friend in getOfflineFriends"
-          :key="friend.id"
-          :class="['list-item', selectedId === friend.id ? 'active' : '']"
-          @click="handleSelect(friend.id)"
-        >
-          <el-avatar :size="40" :src="friend.avatar" />
-          <div class="item-info">
-            <div class="item-name">{{ friend.name }}</div>
-            <div class="item-status">离线</div>
-          </div>
-          <div class="status-dot offline"></div>
-        </div>
-      </div>
-
       <!-- 群组列表 -->
-      <div v-else class="list-container">
+      <div class="list-container">
         <div
           v-for="group in groups"
           :key="group.id"
@@ -91,7 +37,7 @@
     </div>
 
     <!-- 右侧聊天内容区 -->
-    <div class="friends-right">
+    <div class="groups-right">
       <router-view></router-view>
     </div>
   </div>
@@ -102,53 +48,8 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
-const activeTab = ref("friends");
 const searchText = ref("");
 const selectedId = ref(1);
-
-// 模拟数据
-const friends = ref([
-  {
-    id: 1,
-    name: "Alice Cooper",
-    status: "在线",
-    avatar:
-      "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
-    online: true,
-  },
-  {
-    id: 2,
-    name: "Bob Johnson",
-    status: "请勿打扰",
-    avatar:
-      "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
-    online: true,
-  },
-  {
-    id: 3,
-    name: "Carol Smith",
-    status: "离开",
-    avatar:
-      "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
-    online: true,
-  },
-  {
-    id: 4,
-    name: "David Black",
-    status: "离线",
-    avatar:
-      "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
-    online: false,
-  },
-  {
-    id: 5,
-    name: "Eve White",
-    status: "离线",
-    avatar:
-      "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
-    online: false,
-  },
-]);
 
 const groups = ref([
   {
@@ -174,43 +75,24 @@ const groups = ref([
   },
 ]);
 
-// 根据在线状态过滤好友
-const getOnlineFriends = computed(() => {
-  return friends.value.filter(
-    (friend) =>
-      friend.online &&
-      friend.name.toLowerCase().includes(searchText.value.toLowerCase())
-  );
-});
-
-const getOfflineFriends = computed(() => {
-  return friends.value.filter(
-    (friend) =>
-      !friend.online &&
-      friend.name.toLowerCase().includes(searchText.value.toLowerCase())
-  );
-});
 
 // 选择好友或群组
 const handleSelect = (id: number) => {
   selectedId.value = id;
   // 导航到对应的聊天页面
-  const path =
-    activeTab.value === "friends"
-      ? `/home/chat?type=friend&id=${id}`
-      : `/home/chat?type=group&id=${id}`;
+  const path =`/group/chat?type=group&id=${id}`;
   router.push(path);
 };
 </script>
 
 <style lang="scss" scoped>
-.friends-container {
+.groups-container {
   display: flex;
   overflow: hidden;
   height: 100%;
 }
 
-.friends-left {
+.groups-left {
   width: 250px;
   background-color: #2f3136;
   color: #dcddde;
@@ -330,7 +212,7 @@ const handleSelect = (id: number) => {
   }
 }
 
-.friends-right {
+.groups-right {
   flex: 1;
   background-color: #36393f;
   display: flex;
