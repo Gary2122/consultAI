@@ -1,10 +1,18 @@
+<!--
+ * @Descripttion: 
+ * @version: 
+ * @Author: Garrison
+ * @Date: 2025-04-13 20:44:12
+ * @LastEditors: sueRimn
+ * @LastEditTime: 2025-04-28 15:43:10
+-->
 <style lang="scss">
 .layout-header {
   width: 100%;
   background-color: var(--header-bg-color);
   color: var(--text-color);
   transition: background-color 0.3s, color 0.3s;
-  
+
   .userInfo {
     color: var(--text-color);
   }
@@ -18,11 +26,11 @@
         :width="60"
         :height="30"
       ></Vue3Lottie>
-      Garrison AI
+      微聆-weiLIng
     </div>
-    
+
     <div class="userInfo flex-cc pr-20">
-      <modelSelectBtn/>
+      <modelSelectBtn />
       <!-- <div class="flex-cc">
         <nav>功能1</nav>
         <nav>功能2</nav>

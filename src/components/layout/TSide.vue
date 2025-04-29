@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-13 20:44:12
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-04-24 19:54:09
+ * @LastEditTime: 2025-04-29 15:12:00
 -->
 <style lang="scss" scoped>
 .TSide {
@@ -34,6 +34,7 @@
     &:hover {
       background-color: #5865f2;
       border-radius: 16px;
+      text-decoration: none;
     }
 
     &.active {
@@ -59,7 +60,7 @@
     }
 
     i {
-      font-size: 24px;
+      font-size: 20px;
       color: #dcddde;
     }
   }
@@ -93,6 +94,12 @@
       &:hover {
         background-color: #5865f2;
         border-radius: 16px;
+        text-decoration: none;
+      }
+
+      i {
+        font-size: 20px;
+        color: #dcddde;
       }
     }
   }
@@ -108,24 +115,13 @@
 
     <div class="server-divider"></div>
 
-    <!-- 个人好友聊天 -->
-    <router-link to="/home/friends" class="server-icon">
-      <el-tooltip content="个人好友" placement="right">
-        <i class="el-icon-user"></i>
-      </el-tooltip>
-    </router-link>
-
-    <!-- 群组聊天 -->
-    <router-link to="/home/groups" class="server-icon">
-      <el-tooltip content="群组聊天" placement="right">
-        <i class="el-icon-s-cooperation"></i>
-      </el-tooltip>
-    </router-link>
-
-    <!-- 匿名论坛 -->
-    <router-link to="/home/forum" class="server-icon">
-      <el-tooltip content="匿名论坛" placement="right">
-        <i class="el-icon-s-comment"></i>
+    <router-link
+      v-for="item in routerInfo.homeRoute"
+      :to="item.path"
+      :class="item.routeClass"
+    >
+      <el-tooltip :content="item.content" :placement="item.placement">
+        <i :class="item.icon"></i>
       </el-tooltip>
     </router-link>
 
@@ -137,7 +133,6 @@
         <i class="el-icon-plus"></i>
       </el-tooltip>
     </div>
-
     <!-- 发现更多 -->
     <div class="server-icon">
       <el-tooltip content="发现" placement="right">
@@ -147,13 +142,53 @@
 
     <!-- 设置按钮 (底部) -->
     <div class="user-settings">
-      <router-link to="/home/settings" class="setting-icon">
-        <el-tooltip content="用户设置" placement="right">
-          <i class="el-icon-setting"></i>
+      <router-link :to="routerInfo.settingRoute.path" class="setting-icon">
+        <el-tooltip
+          :content="routerInfo.settingRoute.content"
+          placement="right"
+        >
+          <i :class="routerInfo.settingRoute.icon"></i>
         </el-tooltip>
       </router-link>
     </div>
   </div>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+const routerInfo = {
+  homeRoute: [
+    {
+      name: "个人好友",
+      icon: "iconfont icon-nav_personal",
+      path: "/home/friends",
+      content: "个人好友",
+      routeClass: "server-icon",
+      placement: "right",
+    },
+    {
+      name: "群组聊天",
+      icon: "iconfont icon-zizhanghao",
+      path: "/home/groups",
+      content: "群组聊天",
+      routeClass: "server-icon",
+      placement: "right",
+    },
+    {
+      name: "匿名论坛",
+      icon: "iconfont icon-fenxiang",
+      path: "/home/forum",
+      content: "匿名论坛",
+      routeClass: "server-icon",
+      placement: "right",
+    },
+  ],
+  settingRoute: {
+    name: "个人设置",
+    icon: "iconfont icon-xitongshezhi",
+    path: "/home/settings",
+    content: "个人设置",
+    routeClass: "setting-icon",
+    placement: "right",
+  },
+};
+</script>
