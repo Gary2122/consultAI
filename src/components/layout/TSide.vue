@@ -109,16 +109,19 @@
 <template>
   <div class="TSide w-75 text-center position-relative">
     <!-- 用户头像/主页 -->
-    <router-link to="/home" class="server-icon active">
-      <img src="@/assets/img/home/avartal.jpg" alt="用户头像" />
+    <router-link :to="routerInfo.avatarRoute.path" :class="routerInfo.avatarRoute.routeClass" :active-class="active">
+      <el-tooltip :content="routerInfo.avatarRoute.content" :placement="routerInfo.avatarRoute.placement">
+        <img src="@/assets/img/home/avartal.jpg" alt="用户头像" />
+      </el-tooltip>
     </router-link>
 
     <div class="server-divider"></div>
-
+    
     <router-link
       v-for="item in routerInfo.homeRoute"
       :to="item.path"
       :class="item.routeClass"
+      :active-class="active"
     >
       <el-tooltip :content="item.content" :placement="item.placement">
         <i :class="item.icon"></i>
@@ -142,7 +145,7 @@
 
     <!-- 设置按钮 (底部) -->
     <div class="user-settings">
-      <router-link :to="routerInfo.settingRoute.path" class="setting-icon">
+      <router-link :to="routerInfo.settingRoute.path" class="setting-icon" :active-class="active">
         <el-tooltip
           :content="routerInfo.settingRoute.content"
           placement="right"
@@ -156,11 +159,18 @@
 
 <script lang="ts" setup>
 const routerInfo = {
+  avatarRoute: {
+    name: "查看个人主页",
+    content: "查看个人主页",
+    path: "/userInfo",
+    routeClass: "server-icon",
+    placement: "right",
+  },
   homeRoute: [
     {
       name: "个人好友",
       icon: "iconfont icon-nav_personal",
-      path: "/home/friends",
+      path: "/home",
       content: "个人好友",
       routeClass: "server-icon",
       placement: "right",
@@ -191,4 +201,6 @@ const routerInfo = {
     placement: "right",
   },
 };
+
+const active = "active";
 </script>

@@ -11,7 +11,7 @@ import { RouteRecordRaw } from "vue-router";
 const homeRoutes: RouteRecordRaw = {
   path: "/",
   name: "Home",
-  component: () => import("@/views/Home.vue"),
+  component: () => import("@/views/home/index.vue"),
   meta: {
     requiresAuth: true,
   },
@@ -56,24 +56,14 @@ const homeRoutes: RouteRecordRaw = {
       component: () => import("@/views/home/forum/index.vue"),
     },
     {
-      path: "calendar",
-      name: "Calendar",
-      component: () => import("@/views/calendar/index.vue"),
-    },
-    {
-      path: "offer",
-      name: "Offer",
-      component: () => import("@/views/offer/index.vue"),
-    },
-    {
-      path: "documents",
-      name: "Documents",
-      component: () => import("@/views/documents/index.vue"),
+      path: "userInfo",
+      name: "userInfo",
+      component: () => import("@/views/user/userInfo.vue"),
     },
     {
       path: "settings",
       name: "Settings",
-      component: () => import("@/views/home/userSetting/index.vue"),
+      component: () => import("@/views/user/userSetting.vue"),
     },
   ],
 };

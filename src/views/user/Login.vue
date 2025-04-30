@@ -58,16 +58,6 @@ const handleLogin = () => {
   loginFormRef.value?.validate((valid) => {
     if (valid) {
       const { username, password } = loginForm;
-      // 这里应该调用登录接口，并处理返回结果
-      // 例如：
-      // axios.post('/api/login', { username, password }).then(response => {
-      //   localStorage.setItem('token', response.data.token);
-      //   router.replace('/index');
-      // }).catch(error => {
-      //   // 处理错误情况
-      // });
-      // localStorage.setItem('token', 'fake-token-123');
-      // router.replace('/index');
       login(username, password).then((res) => {
         const { token, user } = res.data;
         localStorage.setItem("token", token);
