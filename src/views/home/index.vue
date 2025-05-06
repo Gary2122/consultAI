@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-13 20:44:12
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-04-29 15:33:36
+ * @LastEditTime: 2025-05-06 10:21:44
 -->
 <style lang="scss" scoped>
 .home {
@@ -27,7 +27,7 @@
       height: calc(100vh - 98px);
       border-bottom-right-radius: 16px;
       border-top-right-radius: 16px;
-      overflow: hidden;
+      overflow: auto;
     }
     .AIChatBox {
       width: 650px;
