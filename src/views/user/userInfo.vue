@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-05-06 11:27:30
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-06 10:21:05
+ * @LastEditTime: 2025-05-06 10:51:53
 -->
 <template>
   <div class="user-info-container">
@@ -73,7 +73,9 @@
               </div>
               <div class="info-item" v-if="userInfo.gender">
                 <div class="info-label">性别</div>
-                <div class="info-value">{{ genderMap[userInfo.gender] }}</div>
+                <div class="info-value">
+                  {{ genderMap[userInfo.gender as keyof typeof genderMap] }}
+                </div>
               </div>
               <div class="info-item" v-if="userInfo.birthday">
                 <div class="info-label">出生日期</div>
@@ -183,16 +185,6 @@
                 <div class="stat-item">
                   <div class="stat-value">{{ userInfo.stats.groups }}</div>
                   <div class="stat-label">群组</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-value">{{ userInfo.stats.posts }}</div>
-                  <div class="stat-label">文章</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-value">
-                    {{ userInfo.stats.consultations }}
-                  </div>
-                  <div class="stat-label">咨询</div>
                 </div>
               </div>
             </div>
