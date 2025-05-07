@@ -1,3 +1,11 @@
+<!--
+ * @Descripttion: 
+ * @version: 
+ * @Author: Garrison
+ * @Date: 2025-04-29 15:28:06
+ * @LastEditors: sueRimn
+ * @LastEditTime: 2025-05-06 11:54:26
+-->
 <template>
   <div class="forum-container">
     <!-- 页面头部 -->
