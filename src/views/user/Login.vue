@@ -34,7 +34,7 @@
 <script lang="ts" setup>
 import { onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
-import { login } from "@/api/user";
+import { login, getLoginStatus } from "@/api/user";
 import type { FormInstance } from "element-plus";
 
 const router = useRouter();
@@ -67,11 +67,13 @@ const handleLogin = () => {
   });
 };
 // 检测是否登录过，如果是则自动跳转到首页
-const handleAutoLogin = () => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    router.replace("/home");
+const handleAutoLogin = async () => {
+  const res = await getLoginStatus();
+  const { success: userLoginStatus } = res.data;
+  if (!userLoginStatus) {
+    return;
   }
+  router.replace("/home");
 };
 
 onMounted(() => {

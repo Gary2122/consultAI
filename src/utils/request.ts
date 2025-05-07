@@ -1,3 +1,11 @@
+/*
+ * @Descripttion:
+ * @version:
+ * @Author: Garrison
+ * @Date: 2025-04-22 12:55:04
+ * @LastEditors: sueRimn
+ * @LastEditTime: 2025-05-07 21:19:25
+ */
 import axios from "axios";
 import { ElMessage } from "element-plus";
 import router from "@/router";
@@ -13,7 +21,7 @@ request.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token) {
-      config.headers["token"] = token;
+      config.headers["Authorization"] = `Bearer ${token}`;
     }
     return config;
   },
@@ -30,17 +38,17 @@ request.interceptors.response.use(
       // 清除本地存储的登录信息
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
-      
+
       // 显示提示信息
       ElMessage.warning("请先登录");
-      
+
       // 跳转到登录页面
       router.push("/login");
-      
+
       // 返回 Promise.reject，中断后续处理
       return Promise.reject(new Error("请先登录"));
     }
-    
+
     return response;
   },
   (error) => {
