@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-13 20:44:12
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-04-29 15:12:00
+ * @LastEditTime: 2025-05-08 15:30:08
 -->
 <style lang="scss" scoped>
 .TSide {
@@ -109,14 +109,21 @@
 <template>
   <div class="TSide w-75 text-center position-relative">
     <!-- 用户头像/主页 -->
-    <router-link :to="routerInfo.avatarRoute.path" :class="routerInfo.avatarRoute.routeClass" :active-class="active">
-      <el-tooltip :content="routerInfo.avatarRoute.content" :placement="routerInfo.avatarRoute.placement">
+    <router-link
+      :to="routerInfo.avatarRoute.path"
+      :class="routerInfo.avatarRoute.routeClass"
+      :active-class="active"
+    >
+      <el-tooltip
+        :content="routerInfo.avatarRoute.content"
+        :placement="routerInfo.avatarRoute.placement"
+      >
         <img src="@/assets/img/home/avartal.jpg" alt="用户头像" />
       </el-tooltip>
     </router-link>
 
     <div class="server-divider"></div>
-    
+
     <router-link
       v-for="item in routerInfo.homeRoute"
       :to="item.path"
@@ -130,6 +137,16 @@
 
     <div class="server-divider"></div>
 
+    <router-link
+      v-for="item in routerInfo.extraRoute"
+      :to="item.path"
+      :class="item.routeClass"
+      :active-class="active"
+    >
+      <el-tooltip :content="item.content" :placement="item.placement">
+        <i :class="item.icon"></i>
+      </el-tooltip>
+    </router-link>
     <!-- 添加服务器/群组按钮 -->
     <div class="server-icon">
       <el-tooltip content="添加服务器" placement="right">
@@ -145,7 +162,11 @@
 
     <!-- 设置按钮 (底部) -->
     <div class="user-settings">
-      <router-link :to="routerInfo.settingRoute.path" class="setting-icon" :active-class="active">
+      <router-link
+        :to="routerInfo.settingRoute.path"
+        class="setting-icon"
+        :active-class="active"
+      >
         <el-tooltip
           :content="routerInfo.settingRoute.content"
           placement="right"
@@ -188,6 +209,16 @@ const routerInfo = {
       icon: "iconfont icon-fenxiang",
       path: "/forum",
       content: "匿名论坛",
+      routeClass: "server-icon",
+      placement: "right",
+    },
+  ],
+  extraRoute: [
+    {
+      name: "好友申请",
+      icon: "iconfont icon-jiahao",
+      path: "/friendRequest",
+      content: "好友申请",
       routeClass: "server-icon",
       placement: "right",
     },

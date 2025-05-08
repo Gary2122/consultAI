@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-24 19:53:33
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-04-29 15:44:35
+ * @LastEditTime: 2025-05-08 22:08:26
  */
 import { RouteRecordRaw } from "vue-router";
 
@@ -54,6 +54,11 @@ const homeRoutes: RouteRecordRaw = {
       path: "forum",
       name: "forum",
       component: () => import("@/views/home/forum/index.vue"),
+    },
+    {
+      path: "friendRequest",
+      name: "friendRequest",
+      component: () => import("@/views/home/notice/index.vue"),
     },
     {
       path: "userInfo",
