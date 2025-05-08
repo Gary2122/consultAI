@@ -1,9 +1,19 @@
+<!--
+ * @Descripttion: 
+ * @version: 
+ * @Author: Garrison
+ * @Date: 2025-05-06 11:01:27
+ * @LastEditors: sueRimn
+ * @LastEditTime: 2025-05-08 13:59:20
+-->
 <template>
   <div class="list-item">
     <el-avatar :size="40" :src="props.friend.avatar" />
     <div class="item-info">
-      <div class="item-name">{{ props.friend.name }}</div>
-      <div class="item-status">{{ props.friend.status }}</div>
+      <div class="item-name">{{ props.friend.username }}</div>
+      <div class="item-status">
+        {{ props.friend.online ? "在线" : "离线/隐藏" }}
+      </div>
     </div>
     <div
       class="status-dot"

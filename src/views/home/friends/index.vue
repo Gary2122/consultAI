@@ -4,22 +4,13 @@
  * @Author: Garrison
  * @Date: 2025-04-27 13:28:10
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-07 21:53:40
+ * @LastEditTime: 2025-05-08 15:20:43
 -->
 <template>
   <div class="friends-container">
     <!-- 左侧好友/群组列表 -->
     <div class="friends-left">
-      <!-- 搜索框 -->
-      <div class="search-box">
-        <el-input
-          v-model="searchText"
-          placeholder="搜索"
-          prefix-icon="el-icon-search"
-          clearable
-        />
-      </div>
-
+      <searchInput v-model="searchText" :searchType="1"></searchInput>
       <!-- 好友列表 -->
       <div class="list-container">
         <div class="list-header">
@@ -59,7 +50,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { searchFriends, getFriends } from "@/actions/friends";
-
+import searchInput from "@/components/home/input/searchInput.vue";
 import friendListItem from "@/components/home/friends/friendListItem.vue";
 
 const router = useRouter();
@@ -78,27 +69,39 @@ const getFriendsList = async () => {
 };
 
 // 搜索好友
-const searchFriendsList = async () => {
-  const searchResult = await searchFriends(searchText.value);
-  friends.value = searchResult;
-  console.log(searchResult);
-};
+// const searchFriendsList = async () => {
+//   const searchResult = await searchFriends(searchText.value);
+//   friends.value = searchResult;
+//   console.log(searchResult);
+// };
 
 // 根据在线状态过滤好友
 const getOnlineFriends = computed(() => {
-  return friends.value.filter(
-    (friend) =>
+  return friends.value.filter((friend) => {
+    if (
       friend.status === "online" &&
       friend.username.toLowerCase().includes(searchText.value.toLowerCase())
-  );
+    ) {
+      return {
+        ...friend,
+        online: true,
+      };
+    }
+  });
 });
 
 const getOfflineFriends = computed(() => {
-  return friends.value.filter(
-    (friend) =>
-      friend.status !== "online" &&
+  return friends.value.filter((friend) => {
+    if (
+      friend.status === "offline" &&
       friend.username.toLowerCase().includes(searchText.value.toLowerCase())
-  );
+    ) {
+      return {
+        ...friend,
+        online: false,
+      };
+    }
+  });
 });
 
 // 选择好友或群组

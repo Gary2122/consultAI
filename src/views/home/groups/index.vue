@@ -4,21 +4,14 @@
  * @Author: Garrison
  * @Date: 2025-04-27 13:28:10
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-04-27 13:45:23
+ * @LastEditTime: 2025-05-08 15:21:28
 -->
 <template>
   <div class="groups-container">
     <!-- 左侧好友/群组列表 -->
     <div class="groups-left">
       <!-- 搜索框 -->
-      <div class="search-box">
-        <el-input
-          v-model="searchText"
-          placeholder="搜索"
-          prefix-icon="el-icon-search"
-          clearable
-        />
-      </div>
+      <searchInput v-model="searchText" :searchType="2"></searchInput>
       <!-- 群组列表 -->
       <div class="list-container">
         <div
@@ -46,7 +39,7 @@
 <script lang="ts" setup>
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
-
+import searchInput from "@/components/home/input/searchInput.vue";
 const router = useRouter();
 const searchText = ref("");
 const selectedId = ref(1);
@@ -75,12 +68,11 @@ const groups = ref([
   },
 ]);
 
-
 // 选择好友或群组
 const handleSelect = (id: number) => {
   selectedId.value = id;
   // 导航到对应的聊天页面
-  const path =`/group/chat?type=group&id=${id}`;
+  const path = `/group/chat?type=group&id=${id}`;
   router.push(path);
 };
 </script>
