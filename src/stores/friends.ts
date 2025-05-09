@@ -1,0 +1,271 @@
+import { defineStore } from "pinia";
+import api from "@/api/chat";
+
+export interface Friend {
+  _id: string;
+  username: string;
+  avatar: string;
+  status: "online" | "offline" | "away" | "busy";
+  lastActive?: string;
+}
+
+export interface FriendRequest {
+  _id: string;
+  sender: {
+    _id: string;
+    username: string;
+    avatar: string;
+  };
+  receiver: {
+    _id: string;
+    username: string;
+    avatar: string;
+  };
+  status: "pending" | "accepted" | "rejected";
+  createdAt: string;
+}
+
+export interface FriendsState {
+  friends: Friend[];
+  onlineFriends: string[];
+  pendingRequests: FriendRequest[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+export const useFriendsStore = defineStore("friends", {
+  state: (): FriendsState => ({
+    friends: [],
+    onlineFriends: [],
+    pendingRequests: [],
+    isLoading: false,
+    error: null,
+  }),
+
+  getters: {
+    // 获取好友列表
+    getFriendsList: (state) => state.friends,
+
+    // 获取在线好友
+    getOnlineFriends: (state) => {
+      return state.friends.filter((friend) =>
+        state.onlineFriends.includes(friend._id)
+      );
+    },
+
+    // 获取离线好友
+    getOfflineFriends: (state) => {
+      return state.friends.filter(
+        (friend) => !state.onlineFriends.includes(friend._id)
+      );
+    },
+
+    // 根据ID获取好友
+    getFriendById: (state) => (id: string) => {
+      return state.friends.find((friend) => friend._id === id);
+    },
+
+    // 获取待处理好友请求
+    getPendingRequests: (state) => state.pendingRequests,
+
+    // 是否有好友请求
+    hasPendingRequests: (state) => state.pendingRequests.length > 0,
+  },
+
+  actions: {
+    // 加载好友列表
+    async loadFriends() {
+      this.isLoading = true;
+      this.error = null;
+
+      try {
+        const response = await api.getFriendsList();
+
+        if (response.data && response.data.success) {
+          this.setFriends(response.data.data);
+
+          // 初始化在线好友列表
+          this.onlineFriends = this.friends
+            .filter((friend) => friend.status === "online")
+            .map((friend) => friend._id);
+
+          return response.data.data;
+        } else {
+          throw new Error(response.data?.message || "加载好友列表失败");
+        }
+      } catch (error: any) {
+        console.error("加载好友列表失败:", error);
+        this.error = error.message || "加载好友列表失败";
+        return [];
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    // 加载待处理的好友请求
+    async loadPendingRequests() {
+      this.isLoading = true;
+
+      try {
+        const response = await api.getPendingFriendRequests();
+
+        if (response.data && response.data.success) {
+          this.setPendingRequests(response.data.data);
+          return response.data.data;
+        } else {
+          throw new Error(response.data?.message || "加载好友请求失败");
+        }
+      } catch (error: any) {
+        console.error("加载好友请求失败:", error);
+        this.error = error.message || "加载好友请求失败";
+        return [];
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    // 发送好友请求
+    async sendFriendRequest(username: string) {
+      this.isLoading = true;
+
+      try {
+        const response = await api.sendFriendRequest(username);
+
+        if (response.data && response.data.success) {
+          return true;
+        } else {
+          throw new Error(response.data?.message || "发送好友请求失败");
+        }
+      } catch (error: any) {
+        console.error("发送好友请求失败:", error);
+        this.error = error.message || "发送好友请求失败";
+        return false;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    // 接受好友请求
+    async acceptFriendRequest(requestId: string) {
+      this.isLoading = true;
+
+      try {
+        const response = await api.acceptFriendRequest(requestId);
+
+        if (response.data && response.data.success) {
+          // 更新好友列表
+          if (response.data.data.friend) {
+            this.addFriend(response.data.data.friend);
+          }
+
+          // 从待处理列表中移除
+          this.pendingRequests = this.pendingRequests.filter(
+            (request) => request._id !== requestId
+          );
+
+          return true;
+        } else {
+          throw new Error(response.data?.message || "接受好友请求失败");
+        }
+      } catch (error: any) {
+        console.error("接受好友请求失败:", error);
+        this.error = error.message || "接受好友请求失败";
+        return false;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    // 拒绝好友请求
+    async rejectFriendRequest(requestId: string) {
+      this.isLoading = true;
+
+      try {
+        const response = await api.rejectFriendRequest(requestId);
+
+        if (response.data && response.data.success) {
+          // 从待处理列表中移除
+          this.pendingRequests = this.pendingRequests.filter(
+            (request) => request._id !== requestId
+          );
+
+          return true;
+        } else {
+          throw new Error(response.data?.message || "拒绝好友请求失败");
+        }
+      } catch (error: any) {
+        console.error("拒绝好友请求失败:", error);
+        this.error = error.message || "拒绝好友请求失败";
+        return false;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    // 设置好友列表
+    setFriends(friends: Friend[]) {
+      this.friends = friends;
+    },
+
+    // 添加单个好友
+    addFriend(friend: Friend) {
+      const exists = this.friends.some((f) => f._id === friend._id);
+      if (!exists) {
+        this.friends.push(friend);
+      }
+    },
+
+    // 删除好友
+    removeFriend(friendId: string) {
+      this.friends = this.friends.filter((friend) => friend._id !== friendId);
+      this.onlineFriends = this.onlineFriends.filter((id) => id !== friendId);
+    },
+
+    // 更新好友状态
+    updateFriendStatus({
+      userId,
+      status,
+    }: {
+      userId: string;
+      status: "online" | "offline";
+    }) {
+      // 更新好友状态
+      const friend = this.friends.find((f) => f._id === userId);
+      if (friend) {
+        friend.status = status;
+      }
+
+      // 更新在线好友列表
+      if (status === "online") {
+        if (!this.onlineFriends.includes(userId)) {
+          this.onlineFriends.push(userId);
+        }
+      } else {
+        this.onlineFriends = this.onlineFriends.filter((id) => id !== userId);
+      }
+    },
+
+    // 设置加载状态
+    setLoading(isLoading: boolean) {
+      this.isLoading = isLoading;
+    },
+
+    // 设置待处理好友请求
+    setPendingRequests(requests: FriendRequest[]) {
+      this.pendingRequests = requests;
+    },
+
+    // 更新好友信息
+    updateFriendInfo(friendInfo: Partial<Friend> & { _id: string }) {
+      const index = this.friends.findIndex((f) => f._id === friendInfo._id);
+      if (index !== -1) {
+        this.friends[index] = { ...this.friends[index], ...friendInfo };
+      }
+    },
+
+    // 清除错误
+    clearError() {
+      this.error = null;
+    },
+  },
+});

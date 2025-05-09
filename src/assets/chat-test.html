@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebSocket聊天测试</title>
+    <!-- 使用Socket.IO的CDN版本 -->
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .container {
+        display: flex;
+        gap: 20px;
+      }
+      .panel {
+        flex: 1;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 15px;
+      }
+      .auth-panel {
+        margin-bottom: 20px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input[type="text"],
+      input[type="password"],
+      select,
+      textarea {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      textarea {
+        height: 80px;
+        resize: vertical;
+      }
+      button {
+        padding: 8px 15px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 5px;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      .friend-item {
+        padding: 10px;
+        margin-bottom: 5px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .friend-item:hover {
+        background-color: #f5f5f5;
+      }
+      .friend-item.active {
+        background-color: #e6f7ff;
+        border-color: #91d5ff;
+      }
+      .chat-header {
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-radius: 4px;
+        margin-bottom: 10px;
+      }
+      .chat-messages {
+        height: 400px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+      }
+      .message {
+        margin-bottom: 10px;
+        padding: 8px 12px;
+        border-radius: 18px;
+        max-width: 70%;
+        position: relative;
+      }
+      .message.sent {
+        background-color: #dcf8c6;
+        margin-left: auto;
+        border-bottom-right-radius: 5px;
+      }
+      .message.received {
+        background-color: #f1f0f0;
+        margin-right: auto;
+        border-bottom-left-radius: 5px;
+      }
+      .message .sender {
+        font-size: 12px;
+        margin-bottom: 4px;
+        font-weight: bold;
+      }
+      .message .time {
+        font-size: 10px;
+        color: #888;
+        position: absolute;
+        bottom: 3px;
+        right: 10px;
+      }
+      .typing-indicator {
+        font-style: italic;
+        color: #888;
+        margin-bottom: 10px;
+        height: 20px;
+      }
+      .status-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+      }
+      .status-online {
+        background-color: #52c41a;
+      }
+      .status-offline {
+        background-color: #d9d9d9;
+      }
+      .error-message {
+        color: red;
+        margin-top: 10px;
+      }
+      .system-message {
+        text-align: center;
+        color: #888;
+        margin: 10px 0;
+        font-style: italic;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>WebSocket聊天测试</h1>
+
+    <div class="auth-panel">
+      <h2>登录</h2>
+      <div class="form-group">
+        <label for="username">用户名:</label>
+        <input type="text" id="username" placeholder="用户名" />
+      </div>
+      <div class="form-group">
+        <label for="password">密码:</label>
+        <input type="password" id="password" placeholder="密码" />
+      </div>
+      <button id="loginBtn">登录</button>
+      <button id="checkAuthBtn">检查登录状态</button>
+      <div id="authStatus"></div>
+    </div>
+
+    <div class="container">
+      <div class="panel">
+        <h2>好友列表</h2>
+        <button id="loadFriendsBtn">加载好友列表</button>
+        <div id="friendsList"></div>
+      </div>
+
+      <div class="panel">
+        <div id="chatContainer">
+          <div class="chat-header">
+            <h2>与 <span id="chatRecipient">未选择</span> 聊天中</h2>
+          </div>
+          <div class="chat-messages" id="chatMessages"></div>
+          <div class="typing-indicator" id="typingIndicator"></div>
+          <div class="form-group">
+            <textarea
+              id="messageInput"
+              placeholder="输入消息..."
+              disabled
+            ></textarea>
+          </div>
+          <button id="sendMessageBtn" disabled>发送</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 确保Socket.IO库已加载
+      window.addEventListener("DOMContentLoaded", (event) => {
+        // 检查io是否已定义
+        if (typeof io === "undefined") {
+          alert("Socket.IO库加载失败，请检查网络连接或刷新页面重试");
+          console.error("Socket.IO库加载失败");
+        }
+      });
+
+      // 全局变量
+      let currentUser = null;
+      let authToken = localStorage.getItem("authToken") || "";
+      let socket = null;
+      let selectedFriend = null;
+      let typingTimeout = null;
+
+      // DOM元素
+      const authStatus = document.getElementById("authStatus");
+      const friendsList = document.getElementById("friendsList");
+      const chatMessages = document.getElementById("chatMessages");
+      const chatRecipient = document.getElementById("chatRecipient");
+      const messageInput = document.getElementById("messageInput");
+      const sendMessageBtn = document.getElementById("sendMessageBtn");
+      const typingIndicator = document.getElementById("typingIndicator");
+
+      // 检查登录状态
+      document
+        .getElementById("checkAuthBtn")
+        .addEventListener("click", checkAuthStatus);
+
+      // 初始检查登录状态
+      if (authToken) {
+        checkAuthStatus();
+      }
+
+      // 登录按钮
+      document
+        .getElementById("loginBtn")
+        .addEventListener("click", async () => {
+          const username = document.getElementById("username").value;
+          const password = document.getElementById("password").value;
+
+          if (!username || !password) {
+            authStatus.innerHTML =
+              '<div class="error-message">请输入用户名和密码</div>';
+            return;
+          }
+
+          try {
+            const response = await fetch("http://localhost:3000/users/login", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ username, password }),
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.token) {
+              authToken = data.token;
+              localStorage.setItem("authToken", authToken);
+              currentUser = data.user;
+
+              authStatus.innerHTML = `<div>登录成功! 欢迎 ${data.user.username}</div>`;
+
+              // 连接WebSocket
+              connectSocket();
+
+              // 加载好友列表
+              loadFriendsList();
+            } else {
+              authStatus.innerHTML = `<div class="error-message">${
+                data.message || "登录失败"
+              }</div>`;
+            }
+          } catch (error) {
+            authStatus.innerHTML = `<div class="error-message">登录请求错误: ${error.message}</div>`;
+          }
+        });
+
+      // 加载好友列表
+      document
+        .getElementById("loadFriendsBtn")
+        .addEventListener("click", loadFriendsList);
+
+      // 发送消息
+      document
+        .getElementById("sendMessageBtn")
+        .addEventListener("click", sendMessage);
+
+      // 输入框监听
+      messageInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+
+        // 发送正在输入的状态
+        if (socket && selectedFriend) {
+          clearTimeout(typingTimeout);
+
+          socket.emit("user:typing", {
+            recipientId: selectedFriend.id,
+            isTyping: true,
+          });
+
+          typingTimeout = setTimeout(() => {
+            socket.emit("user:typing", {
+              recipientId: selectedFriend.id,
+              isTyping: false,
+            });
+          }, 3000);
+        }
+      });
+
+      // 检查登录状态
+      async function checkAuthStatus() {
+        if (!authToken) {
+          authStatus.innerHTML = "<div>未登录</div>";
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            "http://localhost:3000/users/check-auth",
+            {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            }
+          );
+
+          const data = await response.json();
+
+          if (data.success) {
+            authStatus.innerHTML = `<div>已登录为: ${data.user.username}</div>`;
+            currentUser = data.user;
+
+            // 连接WebSocket
+            connectSocket();
+
+            // 加载好友列表
+            loadFriendsList();
+          } else {
+            authStatus.innerHTML = `<div class="error-message">${
+              data.message || "未登录"
+            }</div>`;
+            localStorage.removeItem("authToken");
+            authToken = "";
+          }
+        } catch (error) {
+          authStatus.innerHTML = `<div class="error-message">检查登录状态错误: ${error.message}</div>`;
+        }
+      }
+
+      // 加载好友列表
+      async function loadFriendsList() {
+        if (!authToken) {
+          friendsList.innerHTML = '<div class="error-message">请先登录</div>';
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            "http://localhost:3000/api/friends/list",
+            {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            }
+          );
+
+          const data = await response.json();
+
+          if (data.success) {
+            if (data.data.length === 0) {
+              friendsList.innerHTML = "<div>暂无好友</div>";
+              return;
+            }
+
+            let html = "";
+            data.data.forEach((friend) => {
+              html += `
+                            <div class="friend-item" data-id="${
+                              friend._id
+                            }" data-username="${friend.username}">
+                                <span class="status-dot ${
+                                  friend.status === "online"
+                                    ? "status-online"
+                                    : "status-offline"
+                                }"></span>
+                                ${friend.username}
+                            </div>
+                        `;
+            });
+
+            friendsList.innerHTML = html;
+
+            // 添加点击事件
+            document.querySelectorAll(".friend-item").forEach((item) => {
+              item.addEventListener("click", () => {
+                // 移除之前的active
+                document
+                  .querySelectorAll(".friend-item.active")
+                  .forEach((activeItem) => {
+                    activeItem.classList.remove("active");
+                  });
+
+                // 添加active
+                item.classList.add("active");
+
+                // 设置选中的好友
+                selectedFriend = {
+                  id: item.dataset.id,
+                  username: item.dataset.username,
+                };
+
+                // 更新聊天窗口
+                chatRecipient.textContent = selectedFriend.username;
+                messageInput.disabled = false;
+                sendMessageBtn.disabled = false;
+
+                // 加载聊天历史
+                loadChatHistory(selectedFriend.id);
+              });
+            });
+          } else {
+            friendsList.innerHTML = `<div class="error-message">${
+              data.message || "加载好友列表失败"
+            }</div>`;
+          }
+        } catch (error) {
+          friendsList.innerHTML = `<div class="error-message">加载好友列表错误: ${error.message}</div>`;
+        }
+      }
+
+      // 加载聊天历史
+      async function loadChatHistory(userId) {
+        if (!authToken || !userId) return;
+
+        chatMessages.innerHTML =
+          '<div class="system-message">加载聊天历史中...</div>';
+
+        try {
+          const response = await fetch(
+            `http://localhost:3000/api/messages/${userId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            }
+          );
+
+          const data = await response.json();
+
+          if (data.success) {
+            if (data.data.length === 0) {
+              chatMessages.innerHTML =
+                '<div class="system-message">暂无聊天记录</div>';
+              return;
+            }
+
+            let html = "";
+            data.data.forEach((message) => {
+              const isSent = message.sender._id === currentUser.id;
+              const time = new Date(message.createdAt).toLocaleTimeString();
+
+              html += `
+                            <div class="message ${
+                              isSent ? "sent" : "received"
+                            }" data-id="${message._id}">
+                                <div class="sender">${
+                                  message.sender.username
+                                }</div>
+                                <div class="content">${message.content}</div>
+                                <div class="time">${time}</div>
+                            </div>
+                        `;
+            });
+
+            chatMessages.innerHTML = html;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+          } else {
+            chatMessages.innerHTML = `<div class="error-message">${
+              data.message || "加载聊天历史失败"
+            }</div>`;
+          }
+        } catch (error) {
+          chatMessages.innerHTML = `<div class="error-message">加载聊天历史错误: ${error.message}</div>`;
+        }
+      }
+
+      // 发送消息
+      function sendMessage() {
+        if (!socket || !selectedFriend) return;
+
+        const content = messageInput.value.trim();
+        if (!content) return;
+
+        socket.emit("message:private", {
+          recipientId: selectedFriend.id,
+          content,
+          contentType: "text",
+        });
+
+        // 清空输入框
+        messageInput.value = "";
+      }
+
+      // 连接WebSocket
+      function connectSocket() {
+        if (socket) {
+          // 如果已经连接，先断开
+          socket.disconnect();
+        }
+
+        try {
+          // 检查io是否已定义
+          if (typeof io === "undefined") {
+            throw new Error("Socket.IO库未加载，请刷新页面重试");
+          }
+
+          // 显示连接状态
+          authStatus.innerHTML += "<div>正在连接WebSocket服务器...</div>";
+
+          // 创建新连接 - 明确指定服务器地址和连接选项
+          socket = io("http://localhost:3000", {
+            auth: {
+              token: authToken,
+            },
+            transports: ["websocket", "polling"], // 优先使用WebSocket
+            reconnectionAttempts: 5, // 最多重连5次
+            reconnectionDelay: 1000, // 重连延迟1秒
+            timeout: 20000, // 连接超时时间
+            forceNew: true, // 强制创建新连接
+          });
+
+          // 连接事件
+          socket.on("connect", () => {
+            console.log("WebSocket连接成功");
+            authStatus.innerHTML += "<div>WebSocket已连接</div>";
+          });
+
+          // 断开连接事件
+          socket.on("disconnect", () => {
+            console.log("WebSocket连接已断开");
+          });
+
+          // 连接错误事件
+          socket.on("connect_error", (error) => {
+            console.error("WebSocket连接错误:", error.message);
+            authStatus.innerHTML += `<div class="error-message">WebSocket连接错误: ${error.message}</div>`;
+          });
+
+          // 接收消息事件
+          socket.on("message:received", (data) => {
+            const message = data.message;
+
+            // 如果是当前选中的好友发送的消息
+            if (selectedFriend && message.sender._id === selectedFriend.id) {
+              addMessageToChat(message, false);
+
+              // 发送已读回执
+              socket.emit("message:markAsRead", {
+                messageId: message._id,
+              });
+            }
+
+            // 更新未读消息状态
+            // TODO: 实现未读消息提示
+          });
+
+          // 消息发送成功事件
+          socket.on("message:sent", (data) => {
+            const message = data.message;
+            addMessageToChat(message, true);
+          });
+
+          // 消息已读事件
+          socket.on("message:read", (data) => {
+            // 更新消息已读状态
+            // TODO: 实现消息已读状态更新
+          });
+
+          // 用户状态变化事件
+          socket.on("user:status", (data) => {
+            const { userId, status } = data;
+
+            // 更新好友列表中的状态
+            const friendItem = document.querySelector(
+              `.friend-item[data-id="${userId}"]`
+            );
+            if (friendItem) {
+              const statusDot = friendItem.querySelector(".status-dot");
+              if (statusDot) {
+                statusDot.className = `status-dot status-${status}`;
+              }
+            }
+          });
+
+          // 用户输入状态事件
+          socket.on("user:typing", (data) => {
+            const { userId, isTyping } = data;
+
+            if (selectedFriend && userId === selectedFriend.id) {
+              if (isTyping) {
+                typingIndicator.textContent = `${selectedFriend.username} 正在输入...`;
+              } else {
+                typingIndicator.textContent = "";
+              }
+            }
+          });
+
+          // 错误事件
+          socket.on("error", (data) => {
+            console.error("WebSocket错误:", data.message);
+            chatMessages.innerHTML += `<div class="system-message error-message">${data.message}</div>`;
+          });
+        } catch (error) {
+          console.error("WebSocket连接初始化错误:", error.message);
+          authStatus.innerHTML += `<div class="error-message">WebSocket连接初始化错误: ${error.message}</div>`;
+        }
+      }
+
+      // 添加消息到聊天窗口
+      function addMessageToChat(message, isSent) {
+        const time = new Date(message.createdAt).toLocaleTimeString();
+
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${isSent ? "sent" : "received"}`;
+        messageDiv.dataset.id = message._id;
+
+        messageDiv.innerHTML = `
+                <div class="sender">${message.sender.username}</div>
+                <div class="content">${message.content}</div>
+                <div class="time">${time}</div>
+            `;
+
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+    </script>
+  </body>
+</html>

@@ -36,9 +36,11 @@ import { onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { login, getLoginStatus } from "@/api/user";
 import type { FormInstance } from "element-plus";
+import { useUserStore } from "@/stores/user";
 
 const router = useRouter();
 const loginFormRef = ref<FormInstance | null>(null);
+const userStore = useUserStore();
 
 interface LoginForm {
   username: string;
@@ -61,6 +63,8 @@ const handleLogin = () => {
       login(username, password).then((res) => {
         const { token, user } = res.data;
         localStorage.setItem("token", token);
+        userStore.setToken(token);
+        userStore.setUserInfo(user);
         router.replace("/home");
       });
     }

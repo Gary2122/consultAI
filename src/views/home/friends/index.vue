@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-27 13:28:10
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-08 15:20:43
+ * @LastEditTime: 2025-05-09 16:58:36
 -->
 <template>
   <div class="friends-container">
@@ -18,9 +18,9 @@
         </div>
         <div
           v-for="friend in getOnlineFriends"
-          :key="friend.id"
-          :class="selectedId === friend.id ? 'active' : ''"
-          @click="handleSelect(friend.id)"
+          :key="friend._id"
+          :class="selectedId === friend._id ? 'active' : ''"
+          @click="handleSelect(friend._id)"
         >
           <friendListItem :friend="friend"></friendListItem>
         </div>
@@ -30,9 +30,9 @@
         </div>
         <div
           v-for="friend in getOfflineFriends"
-          :key="friend.id"
-          :class="selectedId === friend.id ? 'active' : ''"
-          @click="handleSelect(friend.id)"
+          :key="friend._id"
+          :class="selectedId === friend._id ? 'active' : ''"
+          @click="handleSelect(friend._id)"
         >
           <friendListItem :friend="friend"></friendListItem>
         </div>
