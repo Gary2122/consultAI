@@ -241,7 +241,7 @@ class SocketService {
   sendPrivateMessage(
     recipientId: string,
     content: string,
-    contentType: "text",
+    contentType: "text" | "image" | "file" = "text",
     fileUrl: string | null = null,
     replyTo: string | null = null
   ) {
@@ -256,7 +256,7 @@ class SocketService {
       interface PrivateMessageData {
         recipientId: string;
         content: string;
-        contentType: "text";
+        contentType: "text" | "image" | "file";
         fileUrl?: string | null;
         replyTo?: string | null;
       }
@@ -333,14 +333,28 @@ class SocketService {
   private handleMessageReceived(message: any) {
     console.log("处理收到的新消息:", message);
 
-    if (!this.chatStore || !this.userStore) return;
+    if (!this.chatStore || !this.userStore) {
+      console.error("Chat store或User store未初始化，无法处理消息");
+      return;
+    }
+
+    // 保存本地引用，避免空检查问题
+    const chatStore = this.chatStore;
+    const userStore = this.userStore;
 
     // 尝试适配不同的消息格式
     const messageData = {
       // 必须字段 - 使用适应性获取，兼容不同的数据结构
-      _id: message._id || message.id,
+      _id:
+        message._id ||
+        message.id ||
+        `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       senderId: message.sender?._id || message.senderId || message.from,
-      receiverId: message.recipient || message.receiverId || message.to,
+      receiverId:
+        message.recipient ||
+        message.receiverId ||
+        message.to ||
+        userStore.userId,
       content: message.content || message.message || message.text || "",
       createdAt:
         message.createdAt || message.timestamp || new Date().toISOString(),
@@ -361,20 +375,43 @@ class SocketService {
       isDeleted: message.isDeleted || false,
       updatedAt:
         message.updatedAt || message.createdAt || new Date().toISOString(),
+
+      // 特殊标记 - 确保在UI中能够识别这是一个新收到的消息
+      isNewReceived: true,
     };
 
     console.log("格式化后的消息:", messageData);
 
-    // 添加到聊天记录
-    this.chatStore.addMessage(messageData);
+    try {
+      // 添加到聊天记录
+      chatStore.addMessage(messageData);
+      console.log(
+        `已添加消息到聊天记录，ID: ${messageData._id}, 发送者: ${messageData.senderId}, 接收者: ${messageData.receiverId}`
+      );
 
-    // 如果是当前聊天，标记为已读
-    if (this.chatStore.currentChatId === messageData.senderId) {
-      // 发送已读回执
-      this.markMessageAsRead(messageData._id);
-    } else {
-      // 不是当前聊天，显示通知
-      this.showNotification(messageData.sender, messageData.content);
+      // 检查消息是否添加到正确的位置 - 使用发送者ID查询
+      const senderMessages = chatStore.getUserMessages(messageData._id);
+      console.log(`从发送者ID获取消息数量: ${senderMessages}`);
+
+      // 重要：如果当前聊天是与消息发送者的聊天，使用更安全的更新方式
+      if (chatStore.currentChatId === messageData.senderId) {
+        console.log("当前正在查看此发送者的聊天，应该更新UI");
+
+        // 手动触发Vue更新，但不清空消息
+        // 设置一个特殊标志，让组件知道需要强制刷新
+        const updatedMessage = { ...messageData, forceRender: true };
+
+        // 更新消息而不是添加，这样就不会有空数组的中间状态
+        chatStore.updateMessage(updatedMessage);
+
+        // 如果是当前聊天，标记为已读
+        this.markMessageAsRead(messageData._id);
+      } else {
+        // 不是当前聊天，显示通知
+        this.showNotification(messageData.sender, messageData.content);
+      }
+    } catch (error) {
+      console.error("处理接收消息时出错:", error);
     }
   }
 
@@ -441,6 +478,13 @@ class SocketService {
 
     // 更新消息状态
     this.chatStore.updateMessage(messageData);
+    console.log(
+      `已更新发送的消息状态，ID: ${messageData._id}, 接收者: ${messageData.receiverId}`
+    );
+
+    // 检查store中的消息是否正确更新
+    const chatMessages = this.chatStore.getUserMessages(messageData.receiverId);
+    console.log(`当前接收者的消息数量: ${chatMessages}`);
   }
 
   /**

@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-14 19:34:51
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-10 14:32:14
+ * @LastEditTime: 2025-05-11 07:41:06
 -->
 <template>
   <div class="chat-container overflow-hidden h-full">
@@ -43,80 +43,81 @@
       </div>
     </div>
 
-    <!-- 聊天消息区 -->
-    <div class="chat-messages" ref="messagesRef">
-      <div v-if="isLoading" class="loading-state">
-        <el-icon class="is-loading"><loading /></el-icon>
-        <p>加载聊天历史中...</p>
-      </div>
-      <div v-else-if="messages.length === 0" class="no-messages">
-        <div class="empty-state">
-          <i class="el-icon-chat-dot-round"></i>
-          <p>没有消息，发送第一条消息开始聊天吧！</p>
+    <el-scrollbar ref="messagesScrollRef" class="overflow-hidden">
+      <!-- 聊天消息区 -->
+      <div class="chat-messages" ref="messagesRef">
+        <div v-if="isLoading" class="loading-state">
+          <el-icon class="is-loading"><loading /></el-icon>
+          <p>加载聊天历史中...</p>
         </div>
-      </div>
-      <template v-else>
-        <div
-          v-for="(message, index) in displayMessages"
-          :key="index"
-          class="message-item"
-          :class="{
-            self: isSelfMessage(message),
-            pending: message.pending,
-            failed: message.failed,
-          }"
-        >
-          <el-avatar
-            v-if="!isSelfMessage(message)"
-            :size="40"
-            :src="getMessageAvatar(message)"
-          />
-          <el-avatar
-            v-if="isSelfMessage(message)"
-            :size="40"
-            :src="userStore.avatar"
-          />
-          <div class="message-content">
-            <div class="message-header">
-              <span class="message-name">
-                {{
-                  isSelfMessage(message)
-                    ? userStore.username
-                    : getMessageSenderName(message)
-                }}
-              </span>
-              <span class="message-time">
-                {{ formatMessageTime(message.createdAt) }}
-              </span>
-              <span v-if="message.failed" class="message-failed-indicator">
-                <i class="el-icon-warning-outline"></i>
-                <el-button
-                  type="text"
-                  size="mini"
-                  @click="retryMessage(message)"
-                  >重试</el-button
-                >
-              </span>
-            </div>
-            <div class="message-text">{{ message.content }}</div>
-
-            <!-- 文件显示 -->
-            <div
-              v-if="message.fileUrl && message.messageType === 'image'"
-              class="message-image"
-            >
-              <el-image :src="message.fileUrl" fit="cover" />
-            </div>
+        <div v-else-if="messages.length === 0" class="no-messages">
+          <div class="empty-state">
+            <i class="el-icon-chat-dot-round"></i>
+            <p>没有消息，发送第一条消息开始聊天吧！</p>
           </div>
         </div>
-      </template>
+        <template v-else>
+          <div
+            v-for="(message, index) in messages"
+            :key="message._id || index"
+            class="message-item"
+            :class="{
+              self: isSelfMessage(message),
+              pending: message.pending,
+              failed: message.failed,
+            }"
+          >
+            <el-avatar
+              v-if="!isSelfMessage(message)"
+              :size="40"
+              :src="getMessageAvatar(message)"
+            />
+            <el-avatar
+              v-if="isSelfMessage(message)"
+              :size="40"
+              :src="userStore.avatar"
+            />
+            <div class="message-content">
+              <div class="message-header">
+                <span class="message-name">
+                  {{
+                    isSelfMessage(message)
+                      ? userStore.username
+                      : getMessageSenderName(message)
+                  }}
+                </span>
+                <span class="message-time">
+                  {{ formatMessageTime(message.createdAt) }}
+                </span>
+                <span v-if="message.failed" class="message-failed-indicator">
+                  <i class="el-icon-warning-outline"></i>
+                  <el-button
+                    type="text"
+                    size="mini"
+                    @click="retryMessage(message)"
+                    >重试</el-button
+                  >
+                </span>
+              </div>
+              <div class="message-text">{{ message.content }}</div>
 
-      <!-- 用户正在输入提示 -->
-      <div v-if="isUserTyping" class="typing-indicator">
-        <span>{{ typingUserName }} 正在输入...</span>
+              <!-- 文件显示 -->
+              <div
+                v-if="message.fileUrl && message.messageType === 'image'"
+                class="message-image"
+              >
+                <el-image :src="message.fileUrl" fit="cover" />
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- 用户正在输入提示 -->
+        <div v-if="isUserTyping" class="typing-indicator">
+          <span>{{ typingUserName }} 正在输入...</span>
+        </div>
       </div>
-    </div>
-
+    </el-scrollbar>
     <!-- 输入框区域 -->
     <div class="chat-input-area">
       <div class="attachment-actions">
@@ -166,31 +167,13 @@ import { useChatStore } from "@/stores/chat";
 import { useFriendsStore } from "@/stores/friends";
 import { useUserStore } from "@/stores/user";
 import socketService from "@/services/socket";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElScrollbar } from "element-plus";
 import { Loading } from "@element-plus/icons-vue";
+// 导入Message类型
+import type { Message } from "@/stores/chat";
 
-// 定义消息类型接口 - 匹配更新后的store类型
-interface ChatMessage {
-  _id: string;
-  senderId: string;
-  receiverId: string;
-  content: string;
-  createdAt: string;
-  read: boolean;
-  messageType: "text" | "image";
-  // 用于显示的额外信息
-  sender?: string;
-  avatar?: string;
-  // 新增字段
-  fileUrl?: string | null;
-  replyTo?: string | null;
-  isDeleted?: boolean;
-  updatedAt?: string;
-  // 用于客户端状态
-  pending?: boolean;
-  failed?: boolean;
-  isSelf?: boolean;
-}
+// 使用从store导入的Message类型
+type ChatMessage = Message;
 
 // 获取状态管理
 const chatStore = useChatStore();
@@ -198,6 +181,7 @@ const friendsStore = useFriendsStore();
 const userStore = useUserStore();
 
 // 获取DOM引用
+const messagesScrollRef = ref<InstanceType<typeof ElScrollbar>>();
 const messagesRef = ref<HTMLElement | null>(null);
 const messageText = ref("");
 const isTyping = ref(false);
@@ -243,16 +227,33 @@ const chatStatus = computed(() => {
 
 // 获取当前聊天消息
 const messages = computed(() => {
-  return id.value ? chatStore.getUserMessages(id.value) : [];
+  if (!id.value) return [];
+
+  // 从聊天store获取消息
+  const result = chatStore.getUserMessages(id.value);
+
+  console.log(
+    `获取消息数组，当前ID: ${id.value}, 消息数量: ${result.length}, 状态:`,
+    chatStore.connected ? "已连接" : "未连接"
+  );
+
+  // 如果消息列表为空但之前有消息，则增加一个缓冲延迟
+  if (result.length === 0 && messagesCache.value.length > 0) {
+    console.log("消息列表突然为空，使用缓存消息");
+    // 可能是正在更新中，返回上次的缓存
+    return messagesCache.value;
+  }
+
+  // 不为空则更新缓存
+  if (result.length > 0) {
+    messagesCache.value = [...result];
+  }
+
+  return result;
 });
 
-// 处理实际显示消息
-const displayMessages = computed(() => {
-  return messages.value.map((msg) => {
-    // 保持原始消息，添加displayTime等
-    return msg;
-  });
-});
+// 添加消息缓存，防止消息列表突然变空
+const messagesCache = ref<ChatMessage[]>([]);
 
 // 获取消息发送者头像
 const getMessageAvatar = (message: ChatMessage): string => {
@@ -329,19 +330,34 @@ const sendMessage = async () => {
       }
     }
 
+    const content = messageText.value.trim();
+
+    // 清空消息框 - 提前清空，提高响应性
+    messageText.value = "";
+
+    // 清除正在输入状态
+    clearTypingStatus();
+
     // 使用Pinia状态管理发送消息
     const tempId = await chatStore.sendMessage({
       receiverId: id.value,
-      content: messageText.value.trim(),
+      content,
       messageType: "text",
     });
 
-    // 使用WebSocket实际发送消息
-    const success = socketService.sendPrivateMessage(
-      id.value,
-      messageText.value.trim(),
-      "text"
+    console.log(
+      `创建临时消息ID: ${tempId}, 当前消息数: ${messages.value.length}`
     );
+
+    // 触发强制更新以确保临时消息立即显示
+    forceUpdate();
+
+    // 立即滚动到底部显示刚刚发送的消息
+    await nextTick();
+    scrollToBottom();
+
+    // 使用WebSocket实际发送消息
+    const success = socketService.sendPrivateMessage(id.value, content, "text");
 
     if (!success) {
       // 消息发送失败
@@ -351,19 +367,14 @@ const sendMessage = async () => {
       });
 
       ElMessage.error("消息发送失败，请检查网络连接");
+
+      // 再次触发更新以显示失败状态
+      forceUpdate();
     }
-
-    // 清空消息框
-    messageText.value = "";
-
-    // 清除正在输入状态
-    clearTypingStatus();
   } catch (error) {
     console.error("发送消息失败:", error);
     ElMessage.error("发送消息失败");
   }
-
-  scrollToBottom();
 };
 
 // 确保Socket连接已建立
@@ -483,7 +494,7 @@ const retryMessage = (message: ChatMessage) => {
     socketService.sendPrivateMessage(
       id.value,
       message.content,
-      message.messageType as "text" | "image"
+      message.messageType
     );
   }
 };
@@ -527,9 +538,21 @@ const clearTypingStatus = () => {
 // 滚动到底部
 const scrollToBottom = async () => {
   await nextTick();
-  if (messagesRef.value) {
-    messagesRef.value.scrollTop = messagesRef.value.scrollHeight;
-  }
+  // 等待DOM更新完成
+  setTimeout(() => {
+    if (messagesScrollRef.value) {
+      // 使用ElScrollbar的滚动方法，设置为最大值让其滚动到底部
+      console.log("正在滚动到底部...");
+      messagesScrollRef.value.setScrollTop(9999999);
+
+      // 再次尝试滚动，确保内容完全加载后的滚动
+      setTimeout(() => {
+        if (messagesScrollRef.value) {
+          messagesScrollRef.value.setScrollTop(9999999);
+        }
+      }, 100);
+    }
+  }, 10);
 };
 
 // 加载聊天记录
@@ -540,8 +563,19 @@ const loadChatHistory = async () => {
 
   try {
     await chatStore.loadChatHistory(id.value);
-    console.log("聊天记录已加载，ID:", id.value);
-    scrollToBottom();
+    console.log(
+      "聊天记录已加载，ID:",
+      id.value,
+      "消息数量:",
+      messages.value.length
+    );
+
+    // 给DOM足够的时间渲染
+    await nextTick();
+    // 延迟滚动，确保内容已渲染
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
   } catch (error) {
     console.error("加载聊天记录失败:", error);
     ElMessage.error("加载聊天记录失败，请重试");
@@ -564,7 +598,7 @@ const initFriends = async () => {
     if (friendsStore.friends.length === 0) {
       console.log("加载好友列表...");
       // 优先使用测试数据（开发环境）
-      await friendsStore.initTestData();
+      // await friendsStore.initTestData();
     }
 
     console.log("好友列表:", friendsStore.friends);
@@ -584,9 +618,14 @@ watch([id, type], async (newValues, oldValues) => {
   if (newValues[0] !== oldValues[0]) {
     // 切换聊天对象
     if (newValues[0]) {
+      console.log(`切换聊天对象到: ${newValues[0]}`);
       // 加载对应的聊天记录
       chatStore.setCurrentChat(newValues[0]);
       await loadChatHistory();
+      // 强制滚动到底部
+      setTimeout(() => {
+        scrollToBottom();
+      }, 200);
     } else {
       // 清除当前聊天
       chatStore.setCurrentChat("");
@@ -594,12 +633,69 @@ watch([id, type], async (newValues, oldValues) => {
   }
 });
 
-// 监听新消息
-watch(
-  () => messages.value.length,
-  () => {
-    scrollToBottom();
+// 添加强制更新函数
+const forceUpdate = () => {
+  if (messages.value.length > 0) {
+    console.log("强制更新组件，当前消息数:", messages.value.length);
+
+    // 在下一个DOM更新周期
+    nextTick(() => {
+      console.log("触发DOM更新");
+
+      // 方法1: 直接修改DOM元素属性
+      if (messagesRef.value) {
+        // 更新时间戳触发DOM更新
+        messagesRef.value.setAttribute("data-update", Date.now().toString());
+      }
+
+      // 方法2: 触发消息容器滚动事件
+      if (messagesScrollRef.value) {
+        messagesScrollRef.value.update();
+      }
+
+      // 延迟滚动到底部确保内容已更新
+      nextTick(() => {
+        scrollToBottom();
+      });
+    });
   }
+};
+
+// 监听聊天消息变化 - 优化监听逻辑
+watch(
+  messages,
+  (newMessages, oldMessages) => {
+    console.log(
+      `消息引用变化: 旧消息数量=${oldMessages?.length || 0}, 新消息数量=${
+        newMessages?.length || 0
+      }`
+    );
+    console.log("消息数量发生变化，触发更新", newMessages);
+    // 检查消息数量是否发生变化
+    if (newMessages.length !== (oldMessages?.length || 0)) {
+      forceUpdate();
+
+      // 消息增加时滚动到底部
+      if (newMessages.length > (oldMessages?.length || 0)) {
+        setTimeout(() => {
+          scrollToBottom();
+        }, 100);
+      }
+    } else {
+      // 虽然长度相同，但可能有消息内容变化
+      // 检测是否有新消息标记或强制渲染标记
+      const hasNewMessage = newMessages.some(
+        (msg) => msg.isNewReceived || (msg as any).forceRender
+      );
+
+      if (hasNewMessage) {
+        console.log("检测到新接收的消息或需要强制渲染的消息，触发更新");
+        forceUpdate();
+        setTimeout(scrollToBottom, 100);
+      }
+    }
+  },
+  { deep: true, immediate: true } // 保持深度监听和立即执行
 );
 
 // 监听WebSocket连接状态
@@ -630,6 +726,12 @@ onMounted(async () => {
   if (id.value) {
     chatStore.setCurrentChat(id.value);
     await loadChatHistory();
+
+    // 组件挂载后确保滚动到底部
+    setTimeout(() => {
+      console.log("组件挂载完成，滚动到底部");
+      scrollToBottom();
+    }, 500);
   }
 });
 
@@ -643,14 +745,12 @@ onBeforeUnmount(() => {
 .chat-container {
   display: flex;
   flex-direction: column;
-  // height: 100%;
-  // overflow: hidden;
+  height: 100vh;
+  overflow: hidden;
 
   .chat-header {
-    // display: flex;
-    // align-items: center;
+    flex-shrink: 0; /* 防止头部被压缩 */
     justify-content: space-between;
-    // padding: 12px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 
     .chat-info {
@@ -687,10 +787,26 @@ onBeforeUnmount(() => {
     }
   }
 
+  :deep(.el-scrollbar) {
+    flex: 1; /* 填充剩余空间 */
+    height: calc(100% - 130px); /* 减去顶部和底部的高度 */
+    overflow: hidden;
+
+    .el-scrollbar__wrap {
+      overflow-x: hidden;
+    }
+
+    .el-scrollbar__bar {
+      opacity: 0.3;
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+  }
+
   .chat-messages {
-    flex: 1;
     padding: 16px;
-    overflow-y: auto;
+    min-height: 100%;
     background-color: #36393f;
 
     .loading-state,
@@ -820,7 +936,7 @@ onBeforeUnmount(() => {
   }
 
   .chat-input-area {
-    display: flex;
+    flex-shrink: 0; /* 防止输入区域被压缩 */
     padding: 12px 16px;
     background-color: #40444b;
 

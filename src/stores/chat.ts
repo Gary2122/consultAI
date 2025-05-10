@@ -10,7 +10,7 @@ export interface Message {
   content: string;
   createdAt: string;
   read: boolean;
-  messageType: "text" | "image";
+  messageType: "text" | "image" | "file";
   // 前端临时状态
   pending?: boolean; // 消息是否正在发送
   failed?: boolean; // 消息是否发送失败
@@ -22,6 +22,10 @@ export interface Message {
   replyTo?: string | null; // 回复消息ID
   isDeleted?: boolean; // 消息是否已删除
   updatedAt?: string; // 更新时间
+  // 客户端状态
+  isSelf?: boolean;
+  // 新消息标记
+  isNewReceived?: boolean;
 }
 
 // 后端消息结构
@@ -129,10 +133,10 @@ export const useChatStore = defineStore("chat", {
 
     // 添加新消息
     addMessage(message: Message) {
-      const chatId =
-        message.senderId !== this.currentChatId
-          ? message.senderId
-          : message.receiverId;
+      const chatId = message.senderId;
+      // message.senderId !== this.currentChatId
+      //   ? message.senderId
+      //   : message.receiverId;
 
       if (!this.messages[chatId]) {
         this.messages[chatId] = [];
@@ -160,11 +164,12 @@ export const useChatStore = defineStore("chat", {
         ) {
           this.unreadCounts[chatId] = (this.unreadCounts[chatId] || 0) + 1;
         }
+        console.log("添加新消息", this.messages);
       }
     },
 
     // 更新消息
-    updateMessage(message: Message) {
+    updateMessage(message: Message & { forceRender?: boolean }) {
       const chatId =
         message.senderId !== this.currentChatId
           ? message.senderId
@@ -186,6 +191,14 @@ export const useChatStore = defineStore("chat", {
           pending: pendingStatus,
           failed: failedStatus,
         };
+
+        // 如果有强制渲染标志，打印日志确认
+        if (message.forceRender) {
+          console.log(`消息 ${message._id} 更新并设置了强制渲染标志`);
+
+          // 移除该标志，避免重复渲染
+          delete this.messages[chatId][index].forceRender;
+        }
       }
     },
 
@@ -208,6 +221,8 @@ export const useChatStore = defineStore("chat", {
         replyTo: backendMessage.replyTo,
         isDeleted: backendMessage.isDeleted,
         updatedAt: backendMessage.updatedAt,
+        isSelf: isCurrentUser,
+        isNewReceived: false,
       };
     },
 
@@ -378,6 +393,8 @@ export const useChatStore = defineStore("chat", {
         replyTo,
         sender: userStore.username as string,
         avatar: userStore.avatar as string,
+        isSelf: userStore.userId === receiverId,
+        isNewReceived: false,
       };
 
       // 添加临时消息到状态
@@ -397,6 +414,22 @@ export const useChatStore = defineStore("chat", {
       if (index !== -1) {
         this.messages[chatId][index].pending = true;
         this.messages[chatId][index].failed = false;
+      }
+    },
+
+    // 清空指定用户的消息
+    clearUserMessages(userId: string) {
+      if (!userId) return;
+      console.log(`清空用户 ${userId} 的消息`);
+
+      // 创建新的记录，保持响应性
+      const newMessages = { ...this.messages };
+
+      // 删除指定用户的消息
+      if (userId in newMessages) {
+        delete newMessages[userId];
+        this.messages = newMessages;
+        console.log(`已清空用户 ${userId} 的消息`);
       }
     },
   },
