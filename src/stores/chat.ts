@@ -111,7 +111,7 @@ export const useChatStore = defineStore("chat", {
     },
 
     // 设置当前聊天ID
-    setCurrentChat(userId: string) {
+    setCurrentChat(userId: string | null) {
       this.currentChatId = userId;
 
       // 将所有消息设为已读
@@ -316,8 +316,13 @@ export const useChatStore = defineStore("chat", {
             this.convertMessageFormat(msg)
           );
 
+          // 清空当前消息（避免重复）
+          this.messages[userId] = [];
+
           // 设置消息
           this.messages[userId] = messages;
+
+          console.log(`已加载 ${messages.length} 条聊天历史`);
 
           return messages;
         } else {

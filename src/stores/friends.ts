@@ -70,6 +70,9 @@ export const useFriendsStore = defineStore("friends", {
 
     // 是否有好友请求
     hasPendingRequests: (state) => state.pendingRequests.length > 0,
+
+    // 是否存储好友列表
+    hasFriends: (state) => state.friends.length > 0,
   },
 
   actions: {
@@ -266,6 +269,44 @@ export const useFriendsStore = defineStore("friends", {
     // 清除错误
     clearError() {
       this.error = null;
+    },
+
+    // 添加测试数据（开发环境使用）
+    async initTestData() {
+      // 如果已有好友数据，则不初始化
+      if (this.friends.length > 0) return this.friends;
+
+      // 开发环境模拟好友数据
+      if (import.meta.env.DEV) {
+        console.log("初始化测试好友数据");
+
+        const testFriends: Friend[] = [
+          {
+            _id: "680c7804e40db6e6430ec67d",
+            username: "测试用户1",
+            avatar:
+              "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
+            status: "online",
+          },
+          {
+            _id: "6819d6f2211bc0c3d6405ecf",
+            username: "测试用户2",
+            avatar:
+              "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
+            status: "offline",
+          },
+        ];
+
+        this.friends = testFriends;
+        this.onlineFriends = testFriends
+          .filter((friend) => friend.status === "online")
+          .map((friend) => friend._id);
+
+        return testFriends;
+      }
+
+      // 非开发环境则尝试从API加载好友
+      return this.loadFriends();
     },
   },
 });

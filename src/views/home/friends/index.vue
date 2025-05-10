@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-27 13:28:10
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-09 16:58:36
+ * @LastEditTime: 2025-05-10 14:28:48
 -->
 <template>
   <div class="friends-container">
@@ -50,6 +50,8 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { searchFriends, getFriends } from "@/actions/friends";
+import { useFriendsStore } from "@/stores/friends";
+
 import searchInput from "@/components/home/input/searchInput.vue";
 import friendListItem from "@/components/home/friends/friendListItem.vue";
 
@@ -57,15 +59,21 @@ const router = useRouter();
 const activeTab = ref("friends");
 const searchText = ref("");
 const selectedId = ref(1);
+const friendsStore = useFriendsStore();
 
 // 模拟数据
 const friends = ref<any[]>([]);
 
 // 获取好友列表
 const getFriendsList = async () => {
-  const friendsList = await getFriends();
-  friends.value = friendsList;
-  console.log(friendsList);
+  if (friendsStore.hasFriends) {
+    friends.value = friendsStore.getFriendsList;
+  } else {
+    const friendsList = await getFriends();
+    friends.value = friendsList;
+    friendsStore.setFriends(friendsList);
+  }
+  console.log(friends.value);
 };
 
 // 搜索好友

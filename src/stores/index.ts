@@ -18,12 +18,9 @@
 export * from "./user";
 export * from "./chat";
 export * from "./friends";
+import { useUserStore } from "./user";
 // 初始化函数
 export function setupStores() {
-  // 初始化用户状态
-  // 如果没有登录状态，则在开发环境中初始化模拟用户
-  // if (!userStore.isLoggedIn && import.meta.env.DEV) {
-  //   console.log("初始化模拟用户数据（仅开发环境）");
-  //   userStore.initMockUser();
-  // }
+  const userStore = useUserStore();
+  userStore.initUser();
 }

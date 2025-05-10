@@ -34,6 +34,16 @@ export const useUserStore = defineStore("user", {
   },
 
   actions: {
+    initUser() {
+      const user = localStorage.getItem("user");
+      const token = localStorage.getItem("token");
+      if (user) {
+        this.setUserInfo(JSON.parse(user));
+      }
+      if (token) {
+        this.setToken(token);
+      }
+    },
     // 设置用户信息
     setUserInfo(userInfo: { id: string; username: string; avatar: string }) {
       this.userId = userInfo.id;

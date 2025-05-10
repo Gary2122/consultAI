@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-14 19:34:51
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-09 17:00:01
+ * @LastEditTime: 2025-05-10 14:32:14
 -->
 <template>
   <div class="chat-container overflow-hidden h-full">
@@ -71,10 +71,19 @@
             :size="40"
             :src="getMessageAvatar(message)"
           />
+          <el-avatar
+            v-if="isSelfMessage(message)"
+            :size="40"
+            :src="userStore.avatar"
+          />
           <div class="message-content">
             <div class="message-header">
-              <span class="message-name" v-if="!isSelfMessage(message)">
-                {{ getMessageSenderName(message) }}
+              <span class="message-name">
+                {{
+                  isSelfMessage(message)
+                    ? userStore.username
+                    : getMessageSenderName(message)
+                }}
               </span>
               <span class="message-time">
                 {{ formatMessageTime(message.createdAt) }}
@@ -99,11 +108,6 @@
               <el-image :src="message.fileUrl" fit="cover" />
             </div>
           </div>
-          <el-avatar
-            v-if="isSelfMessage(message)"
-            :size="40"
-            :src="userStore.avatar"
-          />
         </div>
       </template>
 
@@ -127,7 +131,7 @@
           :rows="1"
           placeholder="发送消息..."
           resize="none"
-          :disabled="!currentFriend"
+          :disabled="!hasChatTarget"
           @keydown.enter.prevent="sendMessage"
           @input="handleTyping"
         />
@@ -139,7 +143,7 @@
         <el-tooltip content="发送" placement="top">
           <i
             class="el-icon-s-promotion"
-            :class="{ disabled: !currentFriend }"
+            :class="{ disabled: !hasChatTarget }"
             @click="sendMessage"
           ></i>
         </el-tooltip>
@@ -215,14 +219,19 @@ const currentFriend = computed(() => {
     return null;
   } else if (id.value) {
     // 获取好友信息
-    return friendsStore.getFriendById(id.value);
+    const friend = friendsStore.getFriendById(id.value);
+    console.log("当前选择的好友:", friend, "ID:", id.value);
+    return friend;
   }
   return null;
 });
 
 // 聊天状态显示
 const chatStatus = computed(() => {
-  if (!currentFriend.value) return "";
+  if (!currentFriend.value) {
+    if (id.value) return "加载中...";
+    return "";
+  }
 
   if (isGroup.value) {
     // 群组状态逻辑
@@ -259,7 +268,6 @@ const getMessageSenderName = (message: ChatMessage): string => {
 
 // 检查消息是否是自己发送的
 const isSelfMessage = (message: ChatMessage) => {
-  console.log("message.senderId", message.senderId, userStore.userId);
   return message.isSelf || message.senderId === userStore.userId;
 };
 
@@ -306,9 +314,21 @@ const formatMessageTime = (time: string) => {
 
 // 发送消息
 const sendMessage = async () => {
-  if (!messageText.value.trim() || !currentFriend.value) return;
+  if (!messageText.value.trim() || !hasChatTarget.value) return;
 
   try {
+    // 检查WebSocket连接状态，如果未连接则尝试重连
+    if (!socketService.isConnected.value) {
+      ElMessage.warning("网络连接中断，正在尝试重新连接...");
+      await ensureSocketConnection();
+
+      // 如果重连后仍未连接，则显示错误并退出
+      if (!socketService.isConnected.value) {
+        ElMessage.error("无法连接到聊天服务器，请检查网络连接或刷新页面");
+        return;
+      }
+    }
+
     // 使用Pinia状态管理发送消息
     const tempId = await chatStore.sendMessage({
       receiverId: id.value,
@@ -346,6 +366,111 @@ const sendMessage = async () => {
   scrollToBottom();
 };
 
+// 确保Socket连接已建立
+const ensureSocketConnection = async () => {
+  if (socketService.isConnected.value) return true;
+
+  // 如果未连接且未在连接中，尝试连接
+  if (!socketService.isConnecting.value && userStore.token) {
+    socketService.init();
+
+    // 创建一个Promise等待连接完成或超时
+    return new Promise<boolean>((resolve) => {
+      // 连接超时时间（毫秒）
+      const timeout = 5000;
+      let timer: number | null = null;
+
+      // 监听连接状态变化
+      const unwatch = watch(
+        () => socketService.isConnected.value,
+        (connected) => {
+          if (connected) {
+            if (timer !== null) {
+              clearTimeout(timer);
+            }
+            unwatch();
+            resolve(true);
+          }
+        }
+      );
+
+      // 设置超时
+      timer = window.setTimeout(() => {
+        unwatch();
+        resolve(false);
+      }, timeout);
+
+      // 开始连接 - 修复类型问题
+      if (userStore.token) {
+        socketService.connect(userStore.token);
+      } else {
+        console.error("无法连接：用户令牌为空");
+        resolve(false);
+      }
+    });
+  }
+
+  return false;
+};
+
+// 初始化WebSocket连接
+const initSocketConnection = async () => {
+  console.log(
+    "initSocketConnection",
+    socketService.isConnected.value,
+    userStore.token
+  );
+  if (!socketService.isConnected.value && userStore.token) {
+    socketService.init();
+
+    // 显示连接提示
+    const loadingMessage = ElMessage({
+      message: "正在连接聊天服务器...",
+      type: "info",
+      duration: 0,
+    });
+    console.log(socketService.isConnected.value);
+    // 等待连接完成或最多等待5秒
+    const connected = await new Promise<boolean>((resolve) => {
+      // 设置超时
+      const timeout = setTimeout(() => resolve(false), 5000);
+
+      // 监听连接状态
+      const unwatch = watch(
+        () => socketService.isConnected.value,
+        (connected) => {
+          if (connected) {
+            clearTimeout(timeout);
+            unwatch();
+            resolve(true);
+          }
+        }
+      );
+
+      // 开始连接 - 修复类型问题
+      if (userStore.token) {
+        console.log("socketService", socketService.isConnected.value);
+        socketService.connect(userStore.token);
+      } else {
+        console.error("无法连接：用户令牌为空");
+        resolve(false);
+      }
+    });
+
+    // 关闭提示
+    loadingMessage.close();
+
+    if (connected) {
+      ElMessage.success("聊天服务器连接成功");
+    } else {
+      ElMessage.warning("聊天服务器连接超时，部分功能可能不可用");
+    }
+
+    // 请求通知权限
+    requestNotificationPermission();
+  }
+};
+
 // 重试发送失败的消息
 const retryMessage = (message: ChatMessage) => {
   if (message._id) {
@@ -365,17 +490,22 @@ const retryMessage = (message: ChatMessage) => {
 
 // 处理用户输入状态
 const handleTyping = () => {
-  if (!isTyping.value && currentFriend.value) {
-    isTyping.value = true;
-    socketService.sendTypingStatus(id.value, true);
-  }
+  // 确保有选择好友且连接正常
+  if (!id.value || !socketService.isConnected.value) return;
 
   // 清除之前的超时
   if (typingTimeout.value) {
     clearTimeout(typingTimeout.value);
   }
 
-  // 设置新的超时
+  // 如果还没有设置为正在输入，发送状态
+  if (!isTyping.value) {
+    isTyping.value = true;
+    // 发送正在输入状态
+    socketService.sendTypingStatus(id.value, true);
+  }
+
+  // 设置新的超时，3秒后自动取消输入状态
   typingTimeout.value = window.setTimeout(() => {
     clearTypingStatus();
   }, 3000);
@@ -383,7 +513,7 @@ const handleTyping = () => {
 
 // 清除正在输入状态
 const clearTypingStatus = () => {
-  if (isTyping.value && currentFriend.value) {
+  if (isTyping.value && id.value) {
     isTyping.value = false;
     socketService.sendTypingStatus(id.value, false);
   }
@@ -410,7 +540,7 @@ const loadChatHistory = async () => {
 
   try {
     await chatStore.loadChatHistory(id.value);
-    console.log("id.value", id.value);
+    console.log("聊天记录已加载，ID:", id.value);
     scrollToBottom();
   } catch (error) {
     console.error("加载聊天记录失败:", error);
@@ -420,43 +550,32 @@ const loadChatHistory = async () => {
   }
 };
 
-// 初始化好友列表
-const initFriendsList = async () => {
-  if (friendsStore.friends.length === 0) {
-    try {
-      await friendsStore.loadFriends();
-
-      // 检查是否有待处理的好友请求
-      const requests = await friendsStore.loadPendingRequests();
-
-      if (requests.length > 0) {
-        ElMessage({
-          message: `您有 ${requests.length} 个待处理的好友请求`,
-          type: "info",
-          duration: 3000,
-        });
-      }
-    } catch (error) {
-      console.error("加载好友列表失败:", error);
-    }
-  }
-};
-
-// 初始化WebSocket连接
-const initSocketConnection = () => {
-  if (!socketService.isConnected.value && userStore.token) {
-    socketService.init();
-    socketService.connect(userStore.token);
-
-    // 请求通知权限
-    requestNotificationPermission();
-  }
-};
-
 // 请求通知权限
 const requestNotificationPermission = () => {
   if ("Notification" in window && Notification.permission === "default") {
     Notification.requestPermission();
+  }
+};
+
+// 初始化好友列表
+const initFriends = async () => {
+  try {
+    // 检查是否已加载好友列表
+    if (friendsStore.friends.length === 0) {
+      console.log("加载好友列表...");
+      // 优先使用测试数据（开发环境）
+      await friendsStore.initTestData();
+    }
+
+    console.log("好友列表:", friendsStore.friends);
+
+    // 如果当前有选中的好友ID但没有加载到对应好友信息
+    if (id.value && !currentFriend.value) {
+      ElMessage.warning("未找到对应的好友信息，可能已被删除");
+    }
+  } catch (error) {
+    console.error("加载好友列表失败:", error);
+    ElMessage.error("加载好友列表失败");
   }
 };
 
@@ -483,13 +602,29 @@ watch(
   }
 );
 
+// 监听WebSocket连接状态
+watch(
+  () => socketService.isConnected.value,
+  (connected) => {
+    if (connected) {
+      console.log("WebSocket连接已建立");
+    } else {
+      console.log("WebSocket连接已断开");
+      // 可以在这里根据需要添加自动重连逻辑
+    }
+  }
+);
+
+// 判断是否有选择聊天对象
+const hasChatTarget = computed(() => !!id.value);
+
 // 页面挂载完成
 onMounted(async () => {
-  // 初始化WebSocket连接
-  initSocketConnection();
+  // 初始化好友列表
+  await initFriends();
 
-  // 加载好友列表
-  await initFriendsList();
+  // 初始化WebSocket连接并等待结果
+  await initSocketConnection();
 
   // 如果URL有指定聊天ID，加载聊天记录
   if (id.value) {

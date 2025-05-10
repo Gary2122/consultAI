@@ -63,6 +63,7 @@ const handleLogin = () => {
       login(username, password).then((res) => {
         const { token, user } = res.data;
         localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
         userStore.setToken(token);
         userStore.setUserInfo(user);
         router.replace("/home");
