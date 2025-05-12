@@ -38,6 +38,17 @@
       // padding: 20px;
       margin-left: 20px;
     }
+
+    // 论坛页面专用样式
+    .forum-view {
+      padding: 0;
+
+      .forum-container {
+        border-radius: 0;
+        height: 100%;
+        padding-bottom: 70px;
+      }
+    }
   }
 }
 </style>
@@ -46,7 +57,7 @@
     <THeader class="header h-68"></THeader>
     <div class="content flex-ss">
       <TSide></TSide>
-      <div class="chatBox">
+      <div class="chatBox" :class="{ 'forum-view': currentRoute === 'Forum' }">
         <router-view></router-view>
       </div>
       <div class="AIChatBox">
@@ -60,4 +71,9 @@
 import THeader from "../../components/layout/THeader.vue";
 import TSide from "../../components/layout/TSide.vue";
 import AIChat from "../AIChat/index.vue";
+import { useRoute } from "vue-router";
+import { computed } from "vue";
+
+const route = useRoute();
+const currentRoute = computed(() => route.name);
 </script>

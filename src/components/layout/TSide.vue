@@ -207,7 +207,7 @@ const routerInfo = {
     {
       name: "匿名论坛",
       icon: "iconfont icon-fenxiang",
-      path: "/forum",
+      path: "/home/forum",
       content: "匿名论坛",
       routeClass: "server-icon",
       placement: "right",

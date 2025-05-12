@@ -17,7 +17,11 @@
       <div class="header-desc">在这里畅所欲言，所有发言均为匿名</div>
 
       <div class="filter-options">
-        <el-radio-group v-model="currentFilter" size="small">
+        <el-radio-group
+          v-model="currentFilter"
+          size="small"
+          @change="changeFilter"
+        >
           <el-radio-button label="latest">最新发布</el-radio-button>
           <el-radio-button label="hot">热门讨论</el-radio-button>
           <el-radio-button label="recommended">推荐内容</el-radio-button>
@@ -33,11 +37,11 @@
             <div class="tags-container">
               <el-tag
                 v-for="tag in tags"
-                :key="tag.id"
+                :key="tag._id"
                 :type="tag.type"
                 effect="dark"
-                :class="{ active: selectedTags.includes(tag.id) }"
-                @click="toggleTag(tag.id)"
+                :class="{ active: selectedTags.includes(tag._id) }"
+                @click="toggleTag(tag._id)"
                 class="clickable-tag"
               >
                 {{ tag.name }}
@@ -51,7 +55,11 @@
     <!-- 创建新帖子 -->
     <div class="create-post-container">
       <div class="user-avatar">
-        <el-avatar icon="el-icon-user-solid" :size="40"></el-avatar>
+        <el-avatar
+          :src="userStore.userInfo?.avatar || ''"
+          icon="el-icon-user-solid"
+          :size="40"
+        ></el-avatar>
         <div class="anonymous-badge">匿名</div>
       </div>
       <div class="post-input-container">
@@ -82,9 +90,9 @@
               >
                 <el-option
                   v-for="tag in tags"
-                  :key="tag.id"
+                  :key="tag._id"
                   :label="tag.name"
-                  :value="tag.id"
+                  :value="tag._id"
                 ></el-option>
               </el-select>
             </div>
@@ -107,13 +115,22 @@
 
     <!-- 帖子列表 -->
     <div class="posts-container">
-      <div v-for="post in filteredPosts" :key="post.id" class="post-card">
+      <div
+        v-for="post in filteredPosts"
+        :key="post._id"
+        class="post-card"
+        :data-post-id="post._id"
+      >
         <div class="post-header">
           <div class="post-author">
-            <el-avatar :size="36" icon="el-icon-user-solid"></el-avatar>
+            <el-avatar
+              :size="36"
+              :src="post.author.avatar"
+              icon="el-icon-user-solid"
+            ></el-avatar>
             <div class="author-info">
               <span class="author-name">{{
-                post.anonymous ? "匿名用户" : post.author
+                post.anonymous ? "匿名用户" : post.author.username
               }}</span>
               <span class="post-time">{{ formatTimeAgo(post.createdAt) }}</span>
             </div>
@@ -141,13 +158,13 @@
 
         <div class="post-tags" v-if="post.tags && post.tags.length > 0">
           <el-tag
-            v-for="tagId in post.tags"
-            :key="tagId"
+            v-for="tag in post.tags"
+            :key="tag._id"
             size="small"
             effect="dark"
-            :type="getTagById(tagId).type"
+            :type="tag.type"
           >
-            {{ getTagById(tagId).name }}
+            {{ tag.name }}
           </el-tag>
         </div>
 
@@ -170,7 +187,7 @@
           </div>
           <div class="action-btn" @click="toggleComments(post)">
             <i class="el-icon-chat-dot-round"></i>
-            <span>{{ post.comments.length }}</span>
+            <span>{{ post.commentCount || 0 }}</span>
           </div>
           <div class="action-btn">
             <i class="el-icon-share"></i>
@@ -181,19 +198,26 @@
         <!-- 评论区 -->
         <div class="comments-section" v-if="post.showComments">
           <!-- 评论列表 -->
-          <div class="comments-list" v-if="post.comments.length > 0">
+          <div
+            class="comments-list"
+            v-if="post.comments && post.comments.length > 0"
+          >
             <div
               v-for="comment in post.comments"
-              :key="comment.id"
+              :key="comment._id"
               class="comment-item"
             >
               <div class="comment-avatar">
-                <el-avatar :size="28" icon="el-icon-user-solid"></el-avatar>
+                <el-avatar
+                  :size="28"
+                  :src="comment.author.avatar"
+                  icon="el-icon-user-solid"
+                ></el-avatar>
               </div>
               <div class="comment-content">
                 <div class="comment-header">
                   <span class="comment-author">{{
-                    comment.anonymous ? "匿名用户" : comment.author
+                    comment.anonymous ? "匿名用户" : comment.author.username
                   }}</span>
                   <span class="comment-time">{{
                     formatTimeAgo(comment.createdAt)
@@ -203,7 +227,7 @@
                 <div class="comment-actions">
                   <span
                     class="comment-like"
-                    @click="likeComment(post.id, comment.id)"
+                    @click="likeComment(post._id, comment._id)"
                   >
                     <i
                       class="el-icon-top"
@@ -213,9 +237,62 @@
                   </span>
                   <span
                     class="comment-reply"
-                    @click="replyToComment(post.id, comment.id)"
+                    @click="replyToComment(post._id, comment)"
                     >回复</span
                   >
+                </div>
+
+                <!-- 评论回复 -->
+                <div
+                  class="comment-replies"
+                  v-if="comment.replies && comment.replies.length > 0"
+                >
+                  <div
+                    v-for="reply in comment.replies"
+                    :key="reply._id"
+                    class="reply-item"
+                  >
+                    <div class="reply-avatar">
+                      <el-avatar
+                        :size="24"
+                        :src="reply.author.avatar"
+                        icon="el-icon-user-solid"
+                      ></el-avatar>
+                    </div>
+                    <div class="reply-content">
+                      <div class="reply-header">
+                        <span class="reply-author">{{
+                          reply.anonymous ? "匿名用户" : reply.author.username
+                        }}</span>
+                        <span class="reply-time">{{
+                          formatTimeAgo(reply.createdAt)
+                        }}</span>
+                      </div>
+                      <div class="reply-text">
+                        <span v-if="reply.replyTo" class="reply-to"
+                          >回复 @{{ reply.replyTo.username }}：</span
+                        >
+                        {{ reply.content }}
+                      </div>
+                      <div class="reply-actions">
+                        <span
+                          class="reply-like"
+                          @click="likeComment(post._id, reply._id)"
+                        >
+                          <i
+                            class="el-icon-top"
+                            :class="{ active: reply.liked }"
+                          ></i>
+                          <span>{{ reply.likes }}</span>
+                        </span>
+                        <span
+                          class="reply-reply"
+                          @click="replyToComment(post._id, reply)"
+                          >回复</span
+                        >
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -228,27 +305,32 @@
           <!-- 发表评论 -->
           <div class="create-comment">
             <div class="comment-avatar">
-              <el-avatar :size="28" icon="el-icon-user-solid"></el-avatar>
+              <el-avatar
+                :size="28"
+                :src="userStore.userInfo?.avatar || ''"
+                icon="el-icon-user-solid"
+              ></el-avatar>
             </div>
             <div class="comment-input">
               <el-input
-                v-model="commentInputs[post.id]"
+                v-model="commentInputs[post._id]"
                 placeholder="发表评论..."
                 size="small"
-                @keyup.enter="submitComment(post.id)"
+                @keyup.enter="submitComment(post._id)"
               >
                 <template #append>
                   <el-button
                     icon="el-icon-position"
-                    @click="submitComment(post.id)"
+                    @click="submitComment(post._id)"
                     :disabled="
-                      !commentInputs[post.id] || !commentInputs[post.id].trim()
+                      !commentInputs[post._id] ||
+                      !commentInputs[post._id].trim()
                     "
                   ></el-button>
                 </template>
               </el-input>
               <div class="comment-options">
-                <el-checkbox v-model="commentAnonymous[post.id]"
+                <el-checkbox v-model="commentAnonymous[post._id]"
                   >匿名评论</el-checkbox
                 >
               </div>
@@ -257,13 +339,19 @@
         </div>
       </div>
 
+      <!-- 加载中状态 -->
+      <div class="loading-state" v-if="loading">
+        <el-skeleton :rows="3" animated />
+        <el-skeleton :rows="3" animated />
+      </div>
+
       <!-- 加载更多 -->
-      <div class="load-more" v-if="hasMorePosts">
+      <div class="load-more" v-if="hasMorePosts && !loading">
         <el-button type="text" @click="loadMorePosts">加载更多</el-button>
       </div>
 
       <!-- 无内容提示 -->
-      <div class="empty-posts" v-if="filteredPosts.length === 0">
+      <div class="empty-posts" v-if="filteredPosts.length === 0 && !loading">
         <i class="el-icon-chat-dot-round"></i>
         <p>暂无相关内容</p>
         <el-button type="primary" @click="startCreatePost"
@@ -278,137 +366,37 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed } from "vue";
-import { ElMessage } from "element-plus";
+import { ref, reactive, computed, onMounted } from "vue";
+import { ElMessage, ElLoading } from "element-plus";
 import dayjs from "dayjs";
+import * as forumApi from "@/api/forum";
+import { useUserStore } from "@/stores/user";
+
+// 用户信息
+const userStore = useUserStore();
 
 // 当前过滤器
 const currentFilter = ref("latest");
 
-// 话题标签
-const tags = [
-  { id: 1, name: "学习压力", type: "primary" },
-  { id: 2, name: "人际关系", type: "success" },
-  { id: 3, name: "情绪管理", type: "warning" },
-  { id: 4, name: "职场困惑", type: "danger" },
-  { id: 5, name: "恋爱问题", type: "info" },
-  { id: 6, name: "家庭矛盾", type: "primary" },
-  { id: 7, name: "自我提升", type: "success" },
-  { id: 8, name: "睡眠问题", type: "warning" },
-  { id: 9, name: "考试焦虑", type: "danger" },
-  { id: 10, name: "社交恐惧", type: "info" },
-];
+// 加载状态
+const loading = ref(false);
+
+// 标签列表
+const tags = ref([]);
 
 // 选中的标签ID
-const selectedTags = ref<number[]>([]);
+const selectedTags = ref<string[]>([]);
 
 // 帖子列表数据
-const posts = ref([
-  {
-    id: 1,
-    author: "用户001",
-    anonymous: true,
-    content: "最近考试压力很大，总是睡不好觉，有什么好的缓解方法吗？",
-    createdAt: new Date(Date.now() - 2 * 3600 * 1000),
-    likes: 24,
-    dislikes: 2,
-    liked: false,
-    disliked: false,
-    tags: [1, 8, 9],
-    showComments: false,
-    comments: [
-      {
-        id: 1,
-        author: "用户002",
-        anonymous: false,
-        content: "试试冥想和深呼吸，对我很有效！",
-        createdAt: new Date(Date.now() - 1 * 3600 * 1000),
-        likes: 5,
-        liked: false,
-      },
-      {
-        id: 2,
-        author: "用户003",
-        anonymous: true,
-        content: "每晚泡脚，喝杯热牛奶，我之前也是这样，坚持下来就好多了",
-        createdAt: new Date(Date.now() - 45 * 60 * 1000),
-        likes: 3,
-        liked: false,
-      },
-    ],
-  },
-  {
-    id: 2,
-    author: "用户004",
-    anonymous: false,
-    content:
-      "和室友关系很差，但是不得不一起住，怎么改善关系或者至少和平共处？求解！",
-    createdAt: new Date(Date.now() - 12 * 3600 * 1000),
-    likes: 18,
-    dislikes: 0,
-    liked: false,
-    disliked: false,
-    tags: [2, 6],
-    showComments: false,
-    comments: [
-      {
-        id: 1,
-        author: "用户005",
-        anonymous: true,
-        content:
-          "尝试找个合适的时机坐下来好好沟通一次，说出自己的感受和期望，不指责对方",
-        createdAt: new Date(Date.now() - 8 * 3600 * 1000),
-        likes: 7,
-        liked: false,
-      },
-    ],
-  },
-  {
-    id: 3,
-    author: "用户006",
-    anonymous: true,
-    content:
-      "工作第一年，感觉压力很大，每天都担心做不好被辞退。前辈们有什么建议吗？",
-    createdAt: new Date(Date.now() - 2 * 24 * 3600 * 1000),
-    likes: 45,
-    dislikes: 3,
-    liked: false,
-    disliked: false,
-    tags: [4, 3, 7],
-    showComments: false,
-    comments: [
-      {
-        id: 1,
-        author: "用户007",
-        anonymous: false,
-        content:
-          "正常的！我第一年也这样，多问问题，勇于承认错误，积极学习，慢慢就会好起来的",
-        createdAt: new Date(Date.now() - 1 * 24 * 3600 * 1000),
-        likes: 12,
-        liked: false,
-      },
-      {
-        id: 2,
-        author: "用户008",
-        anonymous: true,
-        content:
-          "建议下班后做点自己喜欢的事情放松一下，不要把全部精力都放在工作上",
-        createdAt: new Date(Date.now() - 18 * 3600 * 1000),
-        likes: 8,
-        liked: false,
-      },
-      {
-        id: 3,
-        author: "用户009",
-        anonymous: false,
-        content: "可以找一个职场导师，有针对性地提升自己，会更有方向感",
-        createdAt: new Date(Date.now() - 6 * 3600 * 1000),
-        likes: 5,
-        liked: false,
-      },
-    ],
-  },
-]);
+const posts = ref([]);
+
+// 分页数据
+const pagination = reactive({
+  page: 1,
+  limit: 10,
+  total: 0,
+  totalPages: 0,
+});
 
 // 新帖子内容
 const newPost = reactive({
@@ -421,50 +409,23 @@ const newPost = reactive({
 const isCreatingPost = ref(false);
 
 // 评论输入
-const commentInputs = reactive<Record<number, string>>({});
-const commentAnonymous = reactive<Record<number, boolean>>({});
+const commentInputs = reactive({});
+const commentAnonymous = reactive({});
 
 // 是否有更多帖子
-const hasMorePosts = ref(true);
+const hasMorePosts = computed(() => {
+  return pagination.page < pagination.totalPages;
+});
 
-// 根据过滤条件筛选帖子
+// 过滤后的帖子列表（这里不再需要本地过滤，由后端完成）
 const filteredPosts = computed(() => {
-  let result = [...posts.value];
-
-  // 根据标签筛选
-  if (selectedTags.value.length > 0) {
-    result = result.filter((post) =>
-      post.tags.some((tagId) => selectedTags.value.includes(tagId))
-    );
-  }
-
-  // 根据过滤器排序
-  switch (currentFilter.value) {
-    case "latest":
-      result.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      break;
-    case "hot":
-      result.sort((a, b) => b.likes - b.dislikes - (a.likes - a.dislikes));
-      break;
-    case "recommended":
-      // 这里可以实现更复杂的推荐算法，暂时简单实现
-      result.sort(
-        (a, b) =>
-          b.likes * 2 + b.comments.length - (a.likes * 2 + a.comments.length)
-      );
-      break;
-  }
-
-  return result;
+  return posts.value;
 });
 
 // 格式化时间
-const formatTimeAgo = (time: Date) => {
+const formatTimeAgo = (time: string) => {
   const now = new Date();
-  const diff = Math.floor((now.getTime() - time.getTime()) / 1000); // 秒
+  const diff = Math.floor((now.getTime() - new Date(time).getTime()) / 1000); // 秒
 
   if (diff < 60) return "刚刚";
   if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`;
@@ -474,18 +435,92 @@ const formatTimeAgo = (time: Date) => {
 };
 
 // 根据ID获取标签
-const getTagById = (id: number) => {
-  return tags.find((tag) => tag.id === id) || { id: 0, name: "", type: "info" };
+const getTagById = (id: string) => {
+  return (
+    tags.value.find((tag) => tag._id === id) || {
+      id: 0,
+      name: "",
+      type: "info",
+    }
+  );
+};
+
+// 加载标签
+const loadTags = async () => {
+  try {
+    const res = await forumApi.getAllTags();
+    if (res.success) {
+      tags.value = res.data;
+    }
+  } catch (error) {
+    console.error("加载标签失败:", error);
+    ElMessage.error("获取标签失败，请刷新重试");
+  }
+};
+
+// 加载帖子
+const loadPosts = async (resetPage = false) => {
+  if (loading.value) return;
+
+  if (resetPage) {
+    pagination.page = 1;
+  }
+
+  loading.value = true;
+  const loadingInstance = ElLoading.service({
+    target: ".posts-container",
+    text: "加载中...",
+    background: "rgba(0, 0, 0, 0.5)",
+  });
+
+  try {
+    const res = await forumApi.getPosts({
+      page: pagination.page,
+      limit: pagination.limit,
+      filter: currentFilter.value as "latest" | "hot" | "recommended",
+      tags: selectedTags.value.length > 0 ? selectedTags.value : undefined,
+    });
+
+    if (res.success) {
+      // 如果是第一页，则替换数据；否则追加数据
+      if (pagination.page === 1) {
+        posts.value = res.data;
+      } else {
+        posts.value = [...posts.value, ...res.data];
+      }
+
+      pagination.total = res.total;
+      pagination.totalPages = res.totalPages;
+    } else {
+      ElMessage.error(res.message || "获取帖子失败");
+    }
+  } catch (error) {
+    console.error("加载帖子失败:", error);
+    ElMessage.error("获取帖子列表失败，请刷新重试");
+  } finally {
+    loading.value = false;
+    loadingInstance.close();
+  }
 };
 
 // 切换标签选择
-const toggleTag = (tagId: number) => {
+const toggleTag = (tagId: string) => {
   const index = selectedTags.value.indexOf(tagId);
   if (index === -1) {
     selectedTags.value.push(tagId);
   } else {
     selectedTags.value.splice(index, 1);
   }
+
+  // 重新加载帖子
+  loadPosts(true);
+};
+
+// 切换过滤器
+const changeFilter = (filter: string) => {
+  currentFilter.value = filter;
+  // 重新加载帖子
+  loadPosts(true);
 };
 
 // 开始创建帖子
@@ -501,87 +536,116 @@ const cancelPost = () => {
 };
 
 // 提交帖子
-const submitPost = () => {
+const submitPost = async () => {
   if (!newPost.content.trim()) {
     ElMessage.warning("内容不能为空");
     return;
   }
 
-  // 模拟提交帖子
-  const newPostObj = {
-    id: Math.max(...posts.value.map((p) => p.id)) + 1,
-    author: "当前用户",
-    anonymous: newPost.anonymous,
-    content: newPost.content,
-    createdAt: new Date(),
-    likes: 0,
-    dislikes: 0,
-    liked: false,
-    disliked: false,
-    tags: newPost.tags,
-    showComments: false,
-    comments: [],
-  };
+  try {
+    const res = await forumApi.createPost({
+      content: newPost.content,
+      tags: newPost.tags,
+      anonymous: newPost.anonymous,
+    });
 
-  posts.value.unshift(newPostObj);
-  ElMessage.success("发布成功");
+    if (res.success) {
+      ElMessage.success("发布成功");
 
-  // 重置表单
-  cancelPost();
+      // 将新帖子添加到列表头部
+      posts.value.unshift(res.data);
+
+      // 重置表单
+      cancelPost();
+
+      // 重新加载第一页帖子
+      loadPosts(true);
+    } else {
+      ElMessage.error(res.message || "发布失败");
+    }
+  } catch (error) {
+    console.error("发布帖子失败:", error);
+    ElMessage.error("发布帖子失败，请重试");
+  }
 };
 
 // 切换评论显示
-const toggleComments = (post: any) => {
+const toggleComments = async (post) => {
+  // 切换显示状态
   post.showComments = !post.showComments;
 
+  // 如果是显示评论，并且还没有加载过评论，则加载评论
+  if (post.showComments && !post.comments) {
+    try {
+      const res = await forumApi.getPostComments(post._id);
+
+      if (res.success) {
+        post.comments = res.data;
+      } else {
+        ElMessage.error(res.message || "获取评论失败");
+      }
+    } catch (error) {
+      console.error("加载评论失败:", error);
+      ElMessage.error("获取评论失败，请重试");
+    }
+  }
+
   // 初始化评论输入
-  if (post.showComments && !commentInputs[post.id]) {
-    commentInputs[post.id] = "";
-    commentAnonymous[post.id] = true;
+  if (post.showComments && !commentInputs[post._id]) {
+    commentInputs[post._id] = "";
+    commentAnonymous[post._id] = true;
   }
 };
 
 // 点赞帖子
-const toggleLike = (post: any) => {
-  if (post.liked) {
-    post.likes--;
-    post.liked = false;
-  } else {
-    if (post.disliked) {
-      post.dislikes--;
-      post.disliked = false;
+const toggleLike = async (post) => {
+  try {
+    const res = await forumApi.likePost(post._id);
+
+    if (res.success) {
+      // 更新帖子的点赞状态和数量
+      post.liked = res.data.liked;
+      post.disliked = res.data.disliked;
+      post.likes = res.data.likes;
+      post.dislikes = res.data.dislikes;
+
+      ElMessage.success(res.message);
+    } else {
+      ElMessage.error(res.message || "操作失败");
     }
-    post.likes++;
-    post.liked = true;
+  } catch (error) {
+    console.error("点赞失败:", error);
+    ElMessage.error("操作失败，请重试");
   }
 };
 
 // 踩帖子
-const toggleDislike = (post: any) => {
-  if (post.disliked) {
-    post.dislikes--;
-    post.disliked = false;
-  } else {
-    if (post.liked) {
-      post.likes--;
-      post.liked = false;
+const toggleDislike = async (post) => {
+  try {
+    const res = await forumApi.dislikePost(post._id);
+
+    if (res.success) {
+      // 更新帖子的点赞状态和数量
+      post.liked = res.data.liked;
+      post.disliked = res.data.disliked;
+      post.likes = res.data.likes;
+      post.dislikes = res.data.dislikes;
+
+      ElMessage.success(res.message);
+    } else {
+      ElMessage.error(res.message || "操作失败");
     }
-    post.dislikes++;
-    post.disliked = true;
+  } catch (error) {
+    console.error("点踩失败:", error);
+    ElMessage.error("操作失败，请重试");
   }
 };
 
 // 回复评论
-const replyToComment = (postId: number, commentId: number) => {
-  const post = posts.value.find((p) => p.id === postId);
-  if (!post) return;
-
-  const comment = post.comments.find((c) => c.id === commentId);
-  if (!comment) return;
-
+const replyToComment = (postId, comment) => {
   // 设置评论内容为回复格式
   commentInputs[postId] = `回复 @${
-    comment.anonymous ? "匿名用户" : comment.author
+    comment.anonymous ? "匿名用户" : comment.author.username
   }：`;
 
   // 聚焦到评论输入框
@@ -596,59 +660,100 @@ const replyToComment = (postId: number, commentId: number) => {
 };
 
 // 点赞评论
-const likeComment = (postId: number, commentId: number) => {
-  const post = posts.value.find((p) => p.id === postId);
-  if (!post) return;
+const likeComment = async (postId, commentId) => {
+  try {
+    const res = await forumApi.likeComment(commentId);
 
-  const comment = post.comments.find((c) => c.id === commentId);
-  if (!comment) return;
+    if (res.success) {
+      // 找到对应的评论并更新状态
+      const post = posts.value.find((p) => p._id === postId);
+      if (post && post.comments) {
+        // 查找是否是顶层评论
+        let comment = post.comments.find((c) => c._id === commentId);
 
-  if (comment.liked) {
-    comment.likes--;
-    comment.liked = false;
-  } else {
-    comment.likes++;
-    comment.liked = true;
+        if (comment) {
+          comment.liked = res.data.liked;
+          comment.likes = res.data.likes;
+        } else {
+          // 可能是评论回复
+          for (const topComment of post.comments) {
+            if (topComment.replies) {
+              const reply = topComment.replies.find((r) => r._id === commentId);
+              if (reply) {
+                reply.liked = res.data.liked;
+                reply.likes = res.data.likes;
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      ElMessage.success(res.message);
+    } else {
+      ElMessage.error(res.message || "操作失败");
+    }
+  } catch (error) {
+    console.error("点赞评论失败:", error);
+    ElMessage.error("操作失败，请重试");
   }
 };
 
 // 提交评论
-const submitComment = (postId: number) => {
+const submitComment = async (postId) => {
   const content = commentInputs[postId];
   if (!content || !content.trim()) {
     ElMessage.warning("评论内容不能为空");
     return;
   }
 
-  const post = posts.value.find((p) => p.id === postId);
-  if (!post) return;
+  try {
+    const res = await forumApi.createComment(postId, {
+      content,
+      anonymous: commentAnonymous[postId],
+    });
 
-  // 添加新评论
-  post.comments.push({
-    id: Math.max(...post.comments.map((c) => c.id), 0) + 1,
-    author: "当前用户",
-    anonymous: commentAnonymous[postId],
-    content: content,
-    createdAt: new Date(),
-    likes: 0,
-    liked: false,
-  });
+    if (res.success) {
+      // 找到帖子并添加评论
+      const post = posts.value.find((p) => p._id === postId);
+      if (post) {
+        if (!post.comments) {
+          post.comments = [];
+        }
 
-  // 清空输入
-  commentInputs[postId] = "";
+        post.comments.unshift(res.data);
+        post.commentCount = (post.commentCount || 0) + 1;
+      }
 
-  ElMessage.success("评论成功");
+      // 清空输入
+      commentInputs[postId] = "";
+
+      ElMessage.success("评论成功");
+    } else {
+      ElMessage.error(res.message || "评论失败");
+    }
+  } catch (error) {
+    console.error("提交评论失败:", error);
+    ElMessage.error("评论失败，请重试");
+  }
 };
 
 // 加载更多帖子
 const loadMorePosts = () => {
-  // 模拟加载更多，实际应调用API
-  setTimeout(() => {
-    // 假设没有更多帖子了
-    hasMorePosts.value = false;
-    ElMessage.info("已加载全部内容");
-  }, 1000);
+  if (!hasMorePosts.value) return;
+
+  pagination.page++;
+  loadPosts();
 };
+
+// 组件挂载时加载数据
+onMounted(async () => {
+  // 先加载标签
+  await loadTags();
+
+  // 再加载帖子
+  loadPosts(true);
+});
 </script>
 
 <style lang="scss" scoped>
@@ -794,6 +899,13 @@ const loadMorePosts = () => {
 }
 
 .posts-container {
+  .loading-state {
+    background-color: #2f3136;
+    border-radius: 5px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
   .post-card {
     background-color: #2f3136;
     border-radius: 5px;
@@ -942,6 +1054,78 @@ const loadMorePosts = () => {
 
                 &:hover {
                   color: white;
+                }
+              }
+            }
+
+            .comment-replies {
+              margin-top: 10px;
+              margin-left: 20px;
+
+              .reply-item {
+                display: flex;
+                margin-bottom: 10px;
+
+                .reply-avatar {
+                  margin-right: 8px;
+                }
+
+                .reply-content {
+                  flex: 1;
+
+                  .reply-header {
+                    margin-bottom: 4px;
+
+                    .reply-author {
+                      font-weight: 500;
+                      color: white;
+                      margin-right: 8px;
+                      font-size: 12px;
+                    }
+
+                    .reply-time {
+                      color: #b9bbbe;
+                      font-size: 11px;
+                    }
+                  }
+
+                  .reply-text {
+                    line-height: 1.4;
+                    font-size: 13px;
+                    margin-bottom: 4px;
+
+                    .reply-to {
+                      color: #5865f2;
+                    }
+                  }
+
+                  .reply-actions {
+                    display: flex;
+                    align-items: center;
+
+                    .reply-like,
+                    .reply-reply {
+                      display: flex;
+                      align-items: center;
+                      cursor: pointer;
+                      color: #b9bbbe;
+                      font-size: 11px;
+                      margin-right: 12px;
+
+                      i {
+                        margin-right: 3px;
+                        font-size: 11px;
+
+                        &.active {
+                          color: #5865f2;
+                        }
+                      }
+
+                      &:hover {
+                        color: white;
+                      }
+                    }
+                  }
                 }
               }
             }
