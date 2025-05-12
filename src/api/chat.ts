@@ -1,4 +1,4 @@
-import request from "@/utils/request";
+import request, { getCached, getWithoutCache } from "@/utils/request";
 
 /**
  * 聊天API服务
@@ -67,10 +67,12 @@ export function updateChatSettings(settings: any) {
 
 // 获取好友列表
 export function getFriendsList() {
-  return request({
-    url: "/api/friends/list",
-    method: "get",
-  });
+  return request.get("/api/friends/list");
+}
+
+// 获取好友列表 (强制刷新)
+export function getFriendsListNoCache() {
+  return getWithoutCache("/api/friends/list");
 }
 
 // 发送好友请求
@@ -115,6 +117,7 @@ export default {
   getChatSettings,
   updateChatSettings,
   getFriendsList,
+  getFriendsListNoCache,
   sendFriendRequest,
   getPendingFriendRequests,
   acceptFriendRequest,

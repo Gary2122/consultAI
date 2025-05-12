@@ -358,10 +358,10 @@ export const useChatStore = defineStore("chat", {
 
       try {
         const response = await api.getChatHistory(userId);
-
-        if (response.data && response.data.success) {
+        console.log(response);
+        if (response && response.success) {
           // 转换消息格式
-          const messages = response.data.data.map((msg: BackendMessage) =>
+          const messages = response.data.map((msg: BackendMessage) =>
             this.convertMessageFormat(msg)
           );
 
