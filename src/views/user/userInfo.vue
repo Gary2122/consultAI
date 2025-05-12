@@ -41,7 +41,11 @@
             加入于 {{ formatDate(userInfo.registerDate) }}
           </div>
           <div class="user-buttons">
-            <el-button type="primary" size="small" icon="el-icon-chat-dot-round"
+            <el-button
+              type="primary"
+              size="small"
+              icon="el-icon-chat-dot-round"
+              @click="sendMessage"
               >发送消息</el-button
             >
             <el-button
@@ -270,11 +274,17 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, computed } from "vue";
-import { useRouter } from "vue-router";
+import { reactive, computed, onMounted, ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import dayjs from "dayjs";
+import { useUserStore } from "@/stores/user";
+import { getUserProfile } from "@/api/user";
+import { ElMessage, ElLoading } from "element-plus";
 
 const router = useRouter();
+const route = useRoute();
+const userStore = useUserStore();
+const loading = ref(false);
 
 // 性别映射
 const genderMap = {
@@ -283,112 +293,98 @@ const genderMap = {
   other: "其他",
 };
 
-// 用户信息数据
+// 用户信息数据 - 初始为空，后续填充
 const userInfo = reactive({
-  id: "10086",
-  username: "WeiLingUser",
-  avatar: "/src/assets/img/home/avartal.jpg",
-  online: true,
-  registerDate: "2023-01-15",
-  bio: "这是一段个人简介，可以介绍自己的兴趣爱好或者其他个人信息。热爱生活，乐于交流，希望在这里遇见更好的自己。",
-  gender: "male",
-  birthday: "1995-05-20",
-  location: "北京",
-  tags: [
-    { name: "情绪管理", type: "primary" },
-    { name: "学习成长", type: "success" },
-    { name: "压力应对", type: "warning" },
-    { name: "人际关系", type: "info" },
-    { name: "睡眠改善", type: "danger" },
-  ],
-  assessments: [
-    {
-      name: "抑郁自评量表 (SDS)",
-      date: "2025-04-28",
-      score: 35,
-      description: "得分情况良好，情绪状态稳定。",
-    },
-    {
-      name: "焦虑自评量表 (SAS)",
-      date: "2025-04-28",
-      score: 42,
-      description: "轻度焦虑，建议适当练习放松技巧。",
-    },
-  ],
+  id: "",
+  username: "",
+  avatar: "",
+  online: false,
+  registerDate: "",
+  bio: "",
+  gender: "",
+  birthday: "",
+  location: "",
+  tags: [],
+  assessments: [],
   stats: {
-    friends: 24,
-    groups: 5,
-    posts: 12,
-    consultations: 3,
+    friends: 0,
+    groups: 0,
+    posts: 0,
+    consultations: 0,
   },
-  activities: [
-    {
-      type: "post",
-      title: "发表了文章《如何有效缓解学习压力》",
-      time: new Date(Date.now() - 2 * 3600 * 1000),
-      description: "分享了5个实用的学习减压技巧",
-    },
-    {
-      type: "assessment",
-      title: '完成了"心理健康自测"',
-      time: new Date(Date.now() - 2 * 24 * 3600 * 1000),
-    },
-    {
-      type: "friend",
-      title: '添加了新朋友"小明"',
-      time: new Date(Date.now() - 5 * 24 * 3600 * 1000),
-    },
-    {
-      type: "group",
-      title: '加入了群组"大学生心理互助会"',
-      time: new Date(Date.now() - 7 * 24 * 3600 * 1000),
-    },
-  ],
-  friends: [
-    {
-      id: 1,
-      name: "Alice",
-      avatar: "/src/assets/img/home/avartal.jpg",
-      online: true,
-    },
-    {
-      id: 2,
-      name: "Bob",
-      avatar: "/src/assets/img/home/avartal.jpg",
-      online: false,
-    },
-    {
-      id: 3,
-      name: "Carol",
-      avatar: "/src/assets/img/home/avartal.jpg",
-      online: true,
-    },
-    {
-      id: 4,
-      name: "David",
-      avatar: "/src/assets/img/home/avartal.jpg",
-      online: false,
-    },
-    {
-      id: 5,
-      name: "Eve",
-      avatar: "/src/assets/img/home/avartal.jpg",
-      online: true,
-    },
-    {
-      id: 6,
-      name: "Frank",
-      avatar: "/src/assets/img/home/avartal.jpg",
-      online: false,
-    },
-    {
-      id: 7,
-      name: "Grace",
-      avatar: "/src/assets/img/home/avartal.jpg",
-      online: true,
-    },
-  ],
+  activities: [],
+  friends: [],
+  isFriend: false, // 如果查看的是他人
 });
+
+// 加载用户信息
+const loadUserProfile = async () => {
+  loading.value = true;
+
+  // 从URL参数获取用户ID，如果没有则显示当前登录用户的信息
+  const userId = route.query.userId?.toString();
+
+  try {
+    const response = await getUserProfile(userId);
+    if (response && response.success) {
+      // 填充用户信息
+      const userData = response.data;
+      userInfo.id = userData.id;
+      userInfo.username = userData.username;
+      userInfo.avatar = userData.avatar || "/src/assets/img/home/avartal.jpg";
+      userInfo.online = userData.online;
+      userInfo.registerDate = userData.registerDate;
+      userInfo.bio = userData.bio;
+      userInfo.gender = userData.gender;
+      userInfo.birthday = userData.birthday;
+      userInfo.location = userData.location;
+      userInfo.tags = userData.tags || [];
+      userInfo.assessments = userData.assessments || [];
+      userInfo.stats = userData.stats || {
+        friends: 0,
+        groups: 0,
+        posts: 0,
+        consultations: 0,
+      };
+      userInfo.activities = userData.activities || [];
+
+      // TODO: 将来可以添加加载好友列表的功能
+      // 暂时使用示例数据
+      userInfo.friends = [
+        {
+          id: 1,
+          name: "Alice",
+          avatar: "/src/assets/img/home/avartal.jpg",
+          online: true,
+        },
+        {
+          id: 2,
+          name: "Bob",
+          avatar: "/src/assets/img/home/avartal.jpg",
+          online: false,
+        },
+        {
+          id: 3,
+          name: "Carol",
+          avatar: "/src/assets/img/home/avartal.jpg",
+          online: true,
+        },
+      ];
+
+      // 如果是其他用户，显示是否已经是好友
+      if (userId && userId !== userStore.userId) {
+        userInfo.isFriend = userData.isFriend || false;
+      }
+    } else {
+      ElMessage.error("获取用户信息失败");
+    }
+  } catch (error) {
+    console.error("加载用户资料出错:", error);
+    ElMessage.error("获取用户资料时发生错误");
+  } finally {
+    loading.value = false;
+  }
+};
 
 // 检查是否有个人资料信息
 const hasProfileInfo = computed(() => {
@@ -406,7 +402,7 @@ const formatDate = (date: string) => {
 // 计算活动的时间差
 const formatTimeAgo = (time: Date) => {
   const now = new Date();
-  const diff = Math.floor((now.getTime() - time.getTime()) / 1000); // 秒
+  const diff = Math.floor((now.getTime() - new Date(time).getTime()) / 1000); // 秒
 
   if (diff < 60) return "刚刚";
   if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`;
@@ -441,6 +437,19 @@ const getProgressColor = (score: number): string => {
 const goToSettings = () => {
   router.push("/settings");
 };
+
+// 发送消息
+const sendMessage = () => {
+  // 如果是查看他人的资料且用户已登录
+  if (route.query.userId && userStore.loggedIn) {
+    router.push(`/home/chat?userId=${route.query.userId}`);
+  }
+};
+
+// 组件挂载时加载用户资料
+onMounted(() => {
+  loadUserProfile();
+});
 </script>
 
 <style lang="scss" scoped>

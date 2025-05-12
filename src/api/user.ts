@@ -32,3 +32,47 @@ export const getLoginStatus = () => {
     method: "get",
   });
 };
+
+// 获取用户资料 (可选参数userId，不提供则获取自己的资料)
+export const getUserProfile = (userId?: string) => {
+  const url = userId ? `/api/users/profile/${userId}` : "/api/users/profile";
+  return request({
+    url,
+    method: "get",
+  });
+};
+
+// 更新用户资料
+export const updateUserProfile = (profileData: any) => {
+  return request({
+    url: "/api/users/profile",
+    method: "put",
+    data: profileData,
+  });
+};
+
+// 添加用户活动记录
+export const addUserActivity = (activityData: {
+  type: string;
+  title: string;
+  description?: string;
+}) => {
+  return request({
+    url: "/api/users/profile/activity",
+    method: "post",
+    data: activityData,
+  });
+};
+
+// 添加测评结果
+export const addUserAssessment = (assessmentData: {
+  name: string;
+  score: number;
+  description?: string;
+}) => {
+  return request({
+    url: "/api/users/profile/assessment",
+    method: "post",
+    data: assessmentData,
+  });
+};
