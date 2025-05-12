@@ -37,6 +37,7 @@ import { useRouter } from "vue-router";
 import { login, getLoginStatus } from "@/api/user";
 import type { FormInstance } from "element-plus";
 import { useUserStore } from "@/stores/user";
+import socketService from "@/services/socket";
 
 const router = useRouter();
 const loginFormRef = ref<FormInstance | null>(null);
@@ -66,6 +67,12 @@ const handleLogin = () => {
         localStorage.setItem("user", JSON.stringify(user));
         userStore.setToken(token);
         userStore.setUserInfo(user);
+
+        // 初始化Socket.IO连接
+        socketService.init();
+        socketService.connect(token);
+        console.log("Socket.IO服务初始化并连接 - 登录成功");
+
         router.replace("/home");
       });
     }

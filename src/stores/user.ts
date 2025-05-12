@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import socketService from "@/services/socket";
 
 export interface UserState {
   token: string | null;
@@ -26,7 +27,7 @@ export const useUserStore = defineStore("user", {
     // 获取用户信息
     userInfo(state) {
       return {
-        userId: state.id,
+        userId: state.userId,
         username: state.username,
         avatar: state.avatar,
       };
@@ -42,6 +43,11 @@ export const useUserStore = defineStore("user", {
       }
       if (token) {
         this.setToken(token);
+
+        // 初始化SocketIO连接
+        socketService.init();
+        socketService.connect(token);
+        console.log("Socket.IO服务初始化并连接");
       }
     },
     // 设置用户信息
@@ -64,6 +70,9 @@ export const useUserStore = defineStore("user", {
       this.username = null;
       this.avatar = null;
       this.isLoggedIn = false;
+
+      // 断开Socket连接
+      socketService.disconnect();
     },
 
     // 初始化模拟用户数据（仅用于开发测试）

@@ -8,22 +8,38 @@
 -->
 <template>
   <div class="groups-container">
-    <!-- 左侧好友/群组列表 -->
+    <!-- 左侧群组列表 -->
     <div class="groups-left">
       <!-- 搜索框 -->
       <searchInput v-model="searchText" :searchType="2"></searchInput>
+
+      <!-- 创建群组按钮 -->
+      <div class="create-group">
+        <el-button type="primary" size="small" @click="handleCreateGroup"
+          >创建群组</el-button
+        >
+      </div>
+
       <!-- 群组列表 -->
       <div class="list-container">
+        <div class="list-header">群组列表</div>
+        <div v-if="loading" class="loading-container">
+          <el-spinner>加载中...</el-spinner>
+        </div>
+        <div v-else-if="groupsList.length === 0" class="empty-container">
+          暂无群组，请创建或加入群组
+        </div>
         <div
-          v-for="group in groups"
-          :key="group.id"
-          :class="['list-item', selectedId === group.id ? 'active' : '']"
-          @click="handleSelect(group.id)"
+          v-else
+          v-for="group in filteredGroups"
+          :key="group._id"
+          :class="['list-item', currentGroupId === group._id ? 'active' : '']"
+          @click="handleSelect(group._id)"
         >
           <el-avatar :size="40" :src="group.avatar" shape="square" />
           <div class="item-info">
             <div class="item-name">{{ group.name }}</div>
-            <div class="item-status">{{ group.memberCount }}人</div>
+            <div class="item-status">{{ group.members?.length || 0 }}人</div>
           </div>
         </div>
       </div>
@@ -37,44 +53,63 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
+import { useGroupStore } from "@/stores/group";
+import { ElMessage } from "element-plus";
 import searchInput from "@/components/home/input/searchInput.vue";
+
 const router = useRouter();
+const groupStore = useGroupStore();
 const searchText = ref("");
-const selectedId = ref(1);
+const loading = ref(false);
 
-const groups = ref([
-  {
-    id: 101,
-    name: "心理健康交流群",
-    memberCount: 128,
-    avatar:
-      "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
-  },
-  {
-    id: 102,
-    name: "情绪管理学习小组",
-    memberCount: 36,
-    avatar:
-      "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
-  },
-  {
-    id: 103,
-    name: "职场减压互助会",
-    memberCount: 67,
-    avatar:
-      "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
-  },
-]);
+// 计算过滤后的群组列表
+const filteredGroups = computed(() => {
+  if (!searchText.value) return groupStore.allGroups;
 
-// 选择好友或群组
-const handleSelect = (id: number) => {
-  selectedId.value = id;
-  // 导航到对应的聊天页面
-  const path = `/group/chat?type=group&id=${id}`;
-  router.push(path);
+  return groupStore.allGroups.filter((group) =>
+    group.name.toLowerCase().includes(searchText.value.toLowerCase())
+  );
+});
+
+// 获取当前选中的群组ID
+const currentGroupId = computed(() => groupStore.currentGroupId);
+
+// 获取所有群组
+const groupsList = computed(() => groupStore.allGroups);
+
+// 加载群组列表
+const loadGroups = async () => {
+  loading.value = true;
+  try {
+    await groupStore.loadUserGroups();
+  } catch (error) {
+    console.error("加载群组失败:", error);
+    ElMessage.error("加载群组失败，请刷新页面重试");
+  } finally {
+    loading.value = false;
+  }
 };
+
+// 创建新群组
+const handleCreateGroup = () => {
+  ElMessage.info("创建群组功能将在下个版本开放");
+  // 这里可以打开创建群组的对话框
+  // 如果后期实现，可以调用groupStore.createGroup方法
+};
+
+// 选择群组
+const handleSelect = (groupId: string) => {
+  groupStore.setCurrentGroup(groupId);
+  // 导航到群组聊天页面
+  router.push(`/group/${groupId}`);
+};
+
+// 组件挂载时加载群组列表
+onMounted(() => {
+  loadGroups();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -93,27 +128,11 @@ const handleSelect = (id: number) => {
   border-right: 1px solid #202225;
   overflow: hidden;
 
-  .tabs-container {
+  .create-group {
+    padding: 10px;
     display: flex;
+    justify-content: center;
     border-bottom: 1px solid #202225;
-
-    .tab {
-      flex: 1;
-      text-align: center;
-      padding: 16px 0;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.2s;
-
-      &:hover {
-        background-color: rgba(79, 84, 92, 0.16);
-      }
-
-      &.active {
-        border-bottom: 2px solid #5865f2;
-        color: white;
-      }
-    }
   }
 
   .search-box {
@@ -145,6 +164,16 @@ const handleSelect = (id: number) => {
       font-size: 12px;
       font-weight: 600;
       text-transform: uppercase;
+    }
+
+    .loading-container,
+    .empty-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #72767d;
+      height: 100px;
+      font-size: 13px;
     }
 
     .list-item {
@@ -183,21 +212,6 @@ const handleSelect = (id: number) => {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-        }
-      }
-
-      .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        margin-left: 5px;
-
-        &.online {
-          background-color: #3ba55d;
-        }
-
-        &.offline {
-          background-color: #747f8d;
         }
       }
     }

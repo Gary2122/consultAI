@@ -26,6 +26,8 @@ export interface Message {
   isSelf?: boolean;
   // 新消息标记
   isNewReceived?: boolean;
+  isGroupMessage?: boolean; // 是否为群组消息
+  forceRender?: boolean; // 强制渲染标记
 }
 
 // 后端消息结构
@@ -133,11 +135,20 @@ export const useChatStore = defineStore("chat", {
 
     // 添加新消息
     addMessage(message: Message) {
-      const chatId = message.senderId;
-      // message.senderId !== this.currentChatId
-      //   ? message.senderId
-      //   : message.receiverId;
+      // 确定正确的聊天ID
+      let chatId;
 
+      // 根据消息是否有isGroupMessage标志决定使用哪个ID作为聊天ID
+      if (message.isGroupMessage) {
+        chatId = message.receiverId; // 对于群组消息，使用receiverId (群组ID)
+      } else {
+        // 对于私聊消息，发送给他人的消息使用receiverId，收到的消息使用senderId
+        const userId = useUserStore().userId;
+        chatId =
+          message.senderId === userId ? message.receiverId : message.senderId;
+      }
+
+      // 如果该聊天ID还没有消息数组，创建一个
       if (!this.messages[chatId]) {
         this.messages[chatId] = [];
       }
@@ -164,16 +175,37 @@ export const useChatStore = defineStore("chat", {
         ) {
           this.unreadCounts[chatId] = (this.unreadCounts[chatId] || 0) + 1;
         }
-        console.log("添加新消息", this.messages);
+        console.log("添加新消息", chatId, message.content);
+      } else {
+        // 如果消息已存在但状态发生变化，更新状态
+        const existingMessage = this.messages[chatId][existingIndex];
+        if (
+          existingMessage.pending !== message.pending ||
+          existingMessage.failed !== message.failed
+        ) {
+          this.messages[chatId][existingIndex] = {
+            ...existingMessage,
+            pending: message.pending,
+            failed: message.failed,
+          };
+        }
       }
     },
 
     // 更新消息
-    updateMessage(message: Message & { forceRender?: boolean }) {
-      const chatId =
-        message.senderId !== this.currentChatId
-          ? message.senderId
-          : message.receiverId;
+    updateMessage(message: Message) {
+      // 确定正确的聊天ID
+      let chatId;
+
+      // 根据消息是否有isGroupMessage标志决定使用哪个ID作为聊天ID
+      if (message.isGroupMessage) {
+        chatId = message.receiverId; // 对于群组消息，使用receiverId (群组ID)
+      } else {
+        // 对于私聊消息，发送给他人的消息使用receiverId，收到的消息使用senderId
+        const userId = useUserStore().userId;
+        chatId =
+          message.senderId === userId ? message.receiverId : message.senderId;
+      }
 
       if (!this.messages[chatId]) return;
 
@@ -206,6 +238,7 @@ export const useChatStore = defineStore("chat", {
     convertMessageFormat(backendMessage: BackendMessage): Message {
       const userStore = useUserStore();
       const isCurrentUser = backendMessage.sender._id === userStore.userId;
+      const isGroupMessage = backendMessage.recipientModel === "groups";
 
       return {
         _id: backendMessage._id,
@@ -223,6 +256,7 @@ export const useChatStore = defineStore("chat", {
         updatedAt: backendMessage.updatedAt,
         isSelf: isCurrentUser,
         isNewReceived: false,
+        isGroupMessage: isGroupMessage, // 标记是否为群组消息
       };
     },
 

@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-24 19:53:33
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-08 22:08:26
+ * @LastEditTime: 2025-05-12 12:33:16
  */
 import { RouteRecordRaw } from "vue-router";
 
@@ -41,11 +41,11 @@ const homeRoutes: RouteRecordRaw = {
       component: () => import("@/views/home/groups/index.vue"),
       children: [
         {
-          path: "chat",
-          name: "groupsChat",
-          component: () => import("@/views/chat/index.vue"),
+          path: ":id",
+          name: "groupChat",
+          component: () => import("@/views/home/groups/chat.vue"),
           meta: {
-            title: "群组详细页面",
+            title: "群组聊天",
           },
         },
       ],

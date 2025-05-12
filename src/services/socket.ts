@@ -3,6 +3,7 @@ import { ElMessage } from "element-plus";
 import { useChatStore } from "@/stores/chat";
 import { useUserStore } from "@/stores/user";
 import { useFriendsStore } from "@/stores/friends";
+import { useGroupStore } from "@/stores/group";
 import { io, Socket } from "socket.io-client";
 
 // 更新的接口定义
@@ -10,6 +11,15 @@ interface PrivateMessage {
   recipient: string;
   content: string;
   contentType?: "text" | "image";
+  fileUrl?: string | null;
+  replyTo?: string | null;
+}
+
+// 群组消息接口
+interface GroupMessage {
+  groupId: string;
+  content: string;
+  contentType?: "text" | "image" | "file";
   fileUrl?: string | null;
   replyTo?: string | null;
 }
@@ -51,6 +61,7 @@ class SocketService {
   private chatStore: ReturnType<typeof useChatStore> | null = null;
   private userStore: ReturnType<typeof useUserStore> | null = null;
   private friendsStore: ReturnType<typeof useFriendsStore> | null = null;
+  private groupStore: ReturnType<typeof useGroupStore> | null = null;
 
   /**
    * 初始化
@@ -59,6 +70,7 @@ class SocketService {
     this.chatStore = useChatStore();
     this.userStore = useUserStore();
     this.friendsStore = useFriendsStore();
+    this.groupStore = useGroupStore();
   }
 
   /**
@@ -196,7 +208,7 @@ class SocketService {
     });
 
     // 用户状态变化 - 修改为服务器实际发送的事件名
-    this.socket.on("user-status", (data: any) => {
+    this.socket.on("user:status", (data: any) => {
       console.log("用户状态变化:", data);
       // 适配数据结构
       const statusData = {
@@ -215,6 +227,22 @@ class SocketService {
         isTyping: data.isTyping,
       };
       this.handleUserTyping(typingData);
+    });
+
+    // 群组成员加入
+    this.socket.on("group:memberJoined", (data: any) => {
+      console.log("群组成员加入:", data);
+      if (this.groupStore) {
+        this.groupStore.handleMemberJoined(data);
+      }
+    });
+
+    // 群组成员离开
+    this.socket.on("group:memberLeft", (data: any) => {
+      console.log("群组成员离开:", data);
+      if (this.groupStore) {
+        this.groupStore.handleMemberLeft(data);
+      }
     });
 
     // 错误消息
@@ -277,13 +305,87 @@ class SocketService {
         messageData.replyTo = replyTo;
       }
 
-      console.log("发送消息:", messageData);
+      console.log("发送私聊消息:", messageData);
 
       // 发送消息
       this.socket.emit("message:private", messageData);
       return true;
     } catch (error) {
       console.error("发送消息失败:", error);
+      return false;
+    }
+  }
+
+  /**
+   * 发送群组消息
+   */
+  sendGroupMessage(
+    groupId: string,
+    content: string,
+    contentType: "text" | "image" | "file" = "text",
+    fileUrl: string | null = null,
+    replyTo: string | null = null
+  ) {
+    if (!this.socket || !this.isConnected.value) {
+      console.error("Socket.IO未连接，无法发送群组消息");
+      ElMessage.error("网络连接已断开，请重新登录");
+      return false;
+    }
+
+    try {
+      // 创建群组消息对象
+      const messageData: GroupMessage = {
+        groupId,
+        content,
+        contentType,
+      };
+
+      // 只在有值的情况下添加可选字段
+      if (fileUrl) {
+        messageData.fileUrl = fileUrl;
+      }
+
+      if (replyTo) {
+        messageData.replyTo = replyTo;
+      }
+
+      console.log("发送群组消息:", messageData);
+
+      // 发送消息
+      this.socket.emit("message:group", messageData);
+      return true;
+    } catch (error) {
+      console.error("发送群组消息失败:", error);
+      return false;
+    }
+  }
+
+  /**
+   * 加入群组
+   */
+  joinGroup(groupId: string) {
+    if (!this.socket || !this.isConnected.value) return false;
+
+    try {
+      this.socket.emit("group:join", { groupId });
+      return true;
+    } catch (error) {
+      console.error("加入群组失败:", error);
+      return false;
+    }
+  }
+
+  /**
+   * 离开群组
+   */
+  leaveGroup(groupId: string) {
+    if (!this.socket || !this.isConnected.value) return false;
+
+    try {
+      this.socket.emit("group:leave", { groupId });
+      return true;
+    } catch (error) {
+      console.error("离开群组失败:", error);
       return false;
     }
   }
@@ -296,7 +398,7 @@ class SocketService {
 
     try {
       // 修改为服务器期望的事件名和参数结构
-      this.socket.emit("message:read", { id: messageId });
+      this.socket.emit("message:markAsRead", { messageId });
       return true;
     } catch (error) {
       console.error("标记消息已读失败:", error);
@@ -313,7 +415,7 @@ class SocketService {
     try {
       // 修改为服务器期望的事件名和参数结构
       this.socket.emit("user:typing", {
-        to: recipientId,
+        recipientId,
         isTyping,
       });
       return true;
@@ -341,6 +443,9 @@ class SocketService {
     // 保存本地引用，避免空检查问题
     const chatStore = this.chatStore;
     const userStore = this.userStore;
+
+    // 判断是否为群组消息
+    const isGroupMessage = message.recipientModel === "groups";
 
     // 尝试适配不同的消息格式
     const messageData = {
@@ -376,8 +481,16 @@ class SocketService {
       updatedAt:
         message.updatedAt || message.createdAt || new Date().toISOString(),
 
+      // 群组消息标记
+      isGroupMessage,
+
       // 特殊标记 - 确保在UI中能够识别这是一个新收到的消息
       isNewReceived: true,
+
+      // 标记是否是自己发送的消息
+      isSelf:
+        message.sender?._id === userStore.userId ||
+        message.senderId === userStore.userId,
     };
 
     console.log("格式化后的消息:", messageData);
@@ -386,16 +499,16 @@ class SocketService {
       // 添加到聊天记录
       chatStore.addMessage(messageData);
       console.log(
-        `已添加消息到聊天记录，ID: ${messageData._id}, 发送者: ${messageData.senderId}, 接收者: ${messageData.receiverId}`
+        `已添加消息到聊天记录，ID: ${messageData._id}, 发送者: ${messageData.senderId}, 接收者: ${messageData.receiverId}, 群组消息: ${isGroupMessage}`
       );
 
-      // 检查消息是否添加到正确的位置 - 使用发送者ID查询
-      const senderMessages = chatStore.getUserMessages(messageData._id);
-      console.log(`从发送者ID获取消息数量: ${senderMessages}`);
+      // 检查是否是当前聊天
+      const isCurrentChat = isGroupMessage
+        ? this.groupStore?.currentGroupId === messageData.receiverId
+        : chatStore.currentChatId === messageData.senderId;
 
-      // 重要：如果当前聊天是与消息发送者的聊天，使用更安全的更新方式
-      if (chatStore.currentChatId === messageData.senderId) {
-        console.log("当前正在查看此发送者的聊天，应该更新UI");
+      if (isCurrentChat) {
+        console.log("当前正在查看此聊天，应该更新UI");
 
         // 手动触发Vue更新，但不清空消息
         // 设置一个特殊标志，让组件知道需要强制刷新
@@ -439,64 +552,69 @@ class SocketService {
    * 处理消息发送成功
    */
   private handleMessageSent(message: any) {
-    console.log("处理消息发送成功:", message);
+    console.log("处理发送成功的消息:", message);
 
-    if (!this.chatStore) return;
+    if (!this.chatStore || !this.userStore) {
+      console.error("Chat store或User store未初始化，无法处理消息");
+      return;
+    }
 
-    // 尝试适配不同的消息格式
-    const messageData = {
-      // 必须字段 - 使用适应性获取
-      _id: message._id || message.id,
-      senderId:
-        message.sender?._id ||
-        message.senderId ||
-        message.from ||
-        this.userStore?.userId,
-      receiverId: message.recipient || message.receiverId || message.to,
-      content: message.content || message.message || message.text || "",
-      createdAt:
-        message.createdAt || message.timestamp || new Date().toISOString(),
+    // 保存本地引用
+    const chatStore = this.chatStore;
+    const userStore = this.userStore;
 
-      // 可选字段
-      read: Array.isArray(message.readBy)
-        ? message.readBy.length > 0
-        : !!message.read,
-      messageType: message.contentType || message.type || "text",
+    // 判断是否为群组消息
+    const isGroupMessage = message.recipientModel === "groups";
 
-      // 其他可选字段
-      fileUrl: message.fileUrl,
-      replyTo: message.replyTo,
-      isDeleted: message.isDeleted || false,
-      updatedAt:
-        message.updatedAt || message.createdAt || new Date().toISOString(),
+    try {
+      // 转换为本地消息格式
+      const messageData = {
+        _id: message._id || message.id,
+        senderId: message.sender?._id || userStore.userId,
+        receiverId: message.recipient,
+        content: message.content || message.message || message.text || "",
+        createdAt: message.createdAt || new Date().toISOString(),
+        read: Array.isArray(message.readBy)
+          ? message.readBy.length > 0
+          : !!message.read,
+        messageType: message.contentType || message.type || "text",
+        sender: message.sender?.username || userStore.username || "我",
+        avatar: message.sender?.avatar || userStore.avatar || "",
+        fileUrl: message.fileUrl,
+        replyTo: message.replyTo,
+        isDeleted: message.isDeleted || false,
+        updatedAt:
+          message.updatedAt || message.createdAt || new Date().toISOString(),
+        isSelf: true, // 是当前用户发送的消息
+        isGroupMessage, // 群组消息标记
+      };
 
-      // 设置为自己发送的消息
-      isSelf: true,
-    };
+      console.log("发送成功，格式化后的消息:", messageData);
 
-    console.log("格式化后的发送成功消息:", messageData);
-
-    // 更新消息状态
-    this.chatStore.updateMessage(messageData);
-    console.log(
-      `已更新发送的消息状态，ID: ${messageData._id}, 接收者: ${messageData.receiverId}`
-    );
-
-    // 检查store中的消息是否正确更新
-    const chatMessages = this.chatStore.getUserMessages(messageData.receiverId);
-    console.log(`当前接收者的消息数量: ${chatMessages}`);
+      // 添加到聊天记录
+      chatStore.addMessage(messageData);
+    } catch (error) {
+      console.error("处理发送成功消息时出错:", error);
+    }
   }
 
   /**
-   * 处理消息已读通知
+   * 处理消息已读
    */
   private handleMessageRead(data: { messageId: string; readAt: string }) {
-    console.log("消息已读:", data);
+    console.log("处理消息已读:", data);
 
-    if (!this.chatStore) return;
+    if (!this.chatStore) {
+      console.error("Chat store未初始化，无法处理消息已读");
+      return;
+    }
 
-    // 更新消息已读状态
-    this.chatStore.markMessageAsRead(data.messageId);
+    try {
+      // 更新消息为已读
+      this.chatStore.markMessageAsRead(data.messageId);
+    } catch (error) {
+      console.error("处理消息已读时出错:", error);
+    }
   }
 
   /**
@@ -506,55 +624,71 @@ class SocketService {
     userId: string;
     status: "online" | "offline";
   }) {
-    console.log("用户状态变化:", data);
+    console.log("处理用户状态变化:", data);
 
-    if (!this.friendsStore) return;
+    if (!this.friendsStore) {
+      console.error("Friends store未初始化，无法处理用户状态");
+      return;
+    }
 
-    // 更新好友状态
-    this.friendsStore.updateFriendStatus({
-      userId: data.userId,
-      status: data.status,
-    });
+    try {
+      // 更新好友状态
+      this.friendsStore.updateFriendStatus({
+        userId: data.userId,
+        status: data.status,
+      });
+    } catch (error) {
+      console.error("处理用户状态变化时出错:", error);
+    }
   }
 
   /**
-   * 处理用户正在输入通知
+   * 处理用户正在输入
    */
   private handleUserTyping(data: { userId: string; isTyping: boolean }) {
-    console.log("用户输入状态:", data);
+    console.log("处理用户输入状态:", data);
 
-    if (!this.chatStore) return;
+    if (!this.chatStore) {
+      console.error("Chat store未初始化，无法处理用户输入状态");
+      return;
+    }
 
-    // 更新用户正在输入状态
-    this.chatStore.setUserTyping({
-      userId: data.userId,
-      isTyping: data.isTyping,
-    });
+    try {
+      // 更新用户输入状态
+      this.chatStore.setUserTyping({
+        userId: data.userId,
+        isTyping: data.isTyping,
+      });
+    } catch (error) {
+      console.error("处理用户输入状态时出错:", error);
+    }
   }
 
   /**
-   * 处理错误消息
+   * 处理错误
    */
   private handleError(data: any) {
     console.error("Socket.IO错误:", data);
 
-    // 尝试从不同的错误格式中提取错误消息
-    let errorMessage = "聊天服务发生错误";
-
-    if (typeof data === "string") {
-      // 如果直接是字符串
-      errorMessage = data;
-    } else if (data) {
-      // 尝试从对象中提取错误信息
-      errorMessage =
-        data.message ||
-        data.error ||
-        data.errorMessage ||
-        (data.code ? `错误代码: ${data.code}` : errorMessage);
-    }
+    const errorMessage = data.message || "未知错误";
 
     // 显示错误消息
-    ElMessage.error(errorMessage);
+    ElMessage({
+      message: errorMessage,
+      type: "error",
+      duration: 5000,
+    });
+
+    // 根据错误类型进行不同处理
+    if (
+      errorMessage.includes("认证") ||
+      errorMessage.includes("token") ||
+      errorMessage.includes("auth")
+    ) {
+      // 认证错误，可能需要重新登录
+      console.warn("Socket认证错误，可能需要重新登录");
+      // TODO: 处理重新登录逻辑
+    }
   }
 
   /**
@@ -564,39 +698,39 @@ class SocketService {
     if (!this.friendsStore) return "";
 
     const friend = this.friendsStore.getFriendById(userId);
-    return friend?.avatar || "";
+    return friend ? friend.avatar : "";
   }
 
   /**
-   * 自动重连逻辑
+   * 重新连接
    */
   private reconnect() {
-    // 如果已达到最大重连次数，停止重连
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.log(`已达到最大重连次数(${this.maxReconnectAttempts})，停止重连`);
-      ElMessage.error("无法连接到聊天服务器，请刷新页面重试");
-      return;
-    }
-
-    // 如果已经在连接中，不再发起新的连接
-    if (this.isConnecting.value) {
-      return;
-    }
-
     this.reconnectAttempts++;
     console.log(
-      `尝试重连 (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
+      `尝试重新连接 (${this.reconnectAttempts}/${this.maxReconnectAttempts})`
     );
 
-    // 获取token
-    const userStore = useUserStore();
-    if (userStore && userStore.token) {
-      // 延迟重连
+    if (this.reconnectAttempts <= this.maxReconnectAttempts) {
+      // 使用指数退避算法增加重连间隔
+      const delay = Math.min(
+        1000 * Math.pow(2, this.reconnectAttempts - 1),
+        30000
+      );
+
       setTimeout(() => {
-        this.connect(userStore.token as string);
-      }, 1000 * Math.min(this.reconnectAttempts, 5)); // 指数退避，最多等待5秒
+        if (!this.isConnected.value) {
+          const token = localStorage.getItem("token");
+          if (token) {
+            this.connect(token);
+          } else {
+            console.error("无可用token，无法重新连接");
+            ElMessage.error("登录已过期，请重新登录");
+          }
+        }
+      }, delay);
     } else {
-      console.error("无法重连：缺少用户令牌");
+      console.error("达到最大重连次数，停止重连");
+      ElMessage.error("无法连接到聊天服务器，请刷新页面或重新登录");
     }
   }
 }
