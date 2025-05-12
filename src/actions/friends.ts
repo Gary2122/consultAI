@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-05-07 21:23:45
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-09 12:47:30
+ * @LastEditTime: 2025-05-12 19:30:42
  */
 // 搜索用户（根据用户名或者用户邮箱）
 import { isEmpty } from "@/utils/common";
@@ -33,11 +33,12 @@ export const searchFriends = async (query: string) => {
 export const getFriends = async () => {
   try {
     const { data } = await getFriendsList();
-    if (isEmpty(data) || isEmpty(data.success) || isEmpty(data.data)) {
+    console.log(data);
+    if (isEmpty(data)) {
       ElMessage.warning("获取朋友列表失败");
       return [];
     }
-    return data.data;
+    return data;
   } catch (error) {
     console.error("获取朋友列表失败:", error);
     ElMessage.error("获取朋友列表失败，请重试");

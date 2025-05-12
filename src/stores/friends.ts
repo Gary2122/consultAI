@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import api from "@/api/chat";
+import { ApiResponse } from "@/utils/request";
 
 export interface Friend {
   _id: string;
@@ -31,6 +32,7 @@ export interface FriendsState {
   pendingRequests: FriendRequest[];
   isLoading: boolean;
   error: string | null;
+  lastUpdated: number;
 }
 
 export const useFriendsStore = defineStore("friends", {
@@ -40,6 +42,7 @@ export const useFriendsStore = defineStore("friends", {
     pendingRequests: [],
     isLoading: false,
     error: null,
+    lastUpdated: 0,
   }),
 
   getters: {
@@ -77,24 +80,34 @@ export const useFriendsStore = defineStore("friends", {
 
   actions: {
     // 加载好友列表
-    async loadFriends() {
+    async loadFriends(forceRefresh = false) {
       this.isLoading = true;
       this.error = null;
 
       try {
-        const response = await api.getFriendsList();
+        // 检查是否强制刷新或数据过时
+        const now = Date.now();
+        const CACHE_TIME = 5 * 60 * 1000; // 5分钟
+        const isCacheExpired = now - this.lastUpdated > CACHE_TIME;
 
-        if (response.data && response.data.success) {
-          this.setFriends(response.data.data);
+        // 如果需要强制刷新或缓存已过期，使用无缓存版本
+        const response =
+          forceRefresh || isCacheExpired
+            ? await api.getFriendsListNoCache()
+            : await api.getFriendsList();
+
+        if (response && response.success) {
+          this.setFriends(response.data);
+          this.lastUpdated = now;
 
           // 初始化在线好友列表
           this.onlineFriends = this.friends
             .filter((friend) => friend.status === "online")
             .map((friend) => friend._id);
 
-          return response.data.data;
+          return response.data;
         } else {
-          throw new Error(response.data?.message || "加载好友列表失败");
+          throw new Error(response?.message || "加载好友列表失败");
         }
       } catch (error: any) {
         console.error("加载好友列表失败:", error);
@@ -112,11 +125,11 @@ export const useFriendsStore = defineStore("friends", {
       try {
         const response = await api.getPendingFriendRequests();
 
-        if (response.data && response.data.success) {
-          this.setPendingRequests(response.data.data);
-          return response.data.data;
+        if (response && response.success) {
+          this.setPendingRequests(response.data);
+          return response.data;
         } else {
-          throw new Error(response.data?.message || "加载好友请求失败");
+          throw new Error(response?.message || "加载好友请求失败");
         }
       } catch (error: any) {
         console.error("加载好友请求失败:", error);
@@ -134,10 +147,10 @@ export const useFriendsStore = defineStore("friends", {
       try {
         const response = await api.sendFriendRequest(username);
 
-        if (response.data && response.data.success) {
+        if (response && response.success) {
           return true;
         } else {
-          throw new Error(response.data?.message || "发送好友请求失败");
+          throw new Error(response?.message || "发送好友请求失败");
         }
       } catch (error: any) {
         console.error("发送好友请求失败:", error);
@@ -155,10 +168,10 @@ export const useFriendsStore = defineStore("friends", {
       try {
         const response = await api.acceptFriendRequest(requestId);
 
-        if (response.data && response.data.success) {
+        if (response && response.success) {
           // 更新好友列表
-          if (response.data.data.friend) {
-            this.addFriend(response.data.data.friend);
+          if (response.data.friend) {
+            this.addFriend(response.data.friend);
           }
 
           // 从待处理列表中移除
@@ -168,7 +181,7 @@ export const useFriendsStore = defineStore("friends", {
 
           return true;
         } else {
-          throw new Error(response.data?.message || "接受好友请求失败");
+          throw new Error(response?.message || "接受好友请求失败");
         }
       } catch (error: any) {
         console.error("接受好友请求失败:", error);
@@ -186,7 +199,7 @@ export const useFriendsStore = defineStore("friends", {
       try {
         const response = await api.rejectFriendRequest(requestId);
 
-        if (response.data && response.data.success) {
+        if (response && response.success) {
           // 从待处理列表中移除
           this.pendingRequests = this.pendingRequests.filter(
             (request) => request._id !== requestId
@@ -194,7 +207,7 @@ export const useFriendsStore = defineStore("friends", {
 
           return true;
         } else {
-          throw new Error(response.data?.message || "拒绝好友请求失败");
+          throw new Error(response?.message || "拒绝好友请求失败");
         }
       } catch (error: any) {
         console.error("拒绝好友请求失败:", error);
@@ -260,9 +273,14 @@ export const useFriendsStore = defineStore("friends", {
 
     // 更新好友信息
     updateFriendInfo(friendInfo: Partial<Friend> & { _id: string }) {
-      const index = this.friends.findIndex((f) => f._id === friendInfo._id);
-      if (index !== -1) {
-        this.friends[index] = { ...this.friends[index], ...friendInfo };
+      const friendIndex = this.friends.findIndex(
+        (f) => f._id === friendInfo._id
+      );
+      if (friendIndex !== -1) {
+        this.friends[friendIndex] = {
+          ...this.friends[friendIndex],
+          ...friendInfo,
+        };
       }
     },
 

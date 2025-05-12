@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-29 15:28:06
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-06 11:54:26
+ * @LastEditTime: 2025-05-12 20:04:33
 -->
 <template>
   <div class="forum-container">
@@ -366,14 +366,29 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed, onMounted } from "vue";
+import {
+  ref,
+  reactive,
+  computed,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+} from "vue";
 import { ElMessage, ElLoading } from "element-plus";
 import dayjs from "dayjs";
 import * as forumApi from "@/api/forum";
 import { useUserStore } from "@/stores/user";
+import { useForumStore } from "@/stores/forum";
+import { useRoute } from "vue-router";
+
+// 路由信息
+const route = useRoute();
 
 // 用户信息
 const userStore = useUserStore();
+
+// 论坛数据Store
+const forumStore = useForumStore();
 
 // 当前过滤器
 const currentFilter = ref("latest");
@@ -382,7 +397,7 @@ const currentFilter = ref("latest");
 const loading = ref(false);
 
 // 标签列表
-const tags = ref<Tag[]>([]);
+const tags = computed(() => forumStore.getAllTags || []);
 
 // 选中的标签ID
 const selectedTags = ref<string[]>([]);
@@ -497,7 +512,7 @@ const formatTimeAgo = (time: string) => {
 // 根据ID获取标签
 const getTagById = (id: string) => {
   return (
-    tags.value.find((tag) => tag._id === id) || {
+    tags.value.find((tag: any) => tag._id === id) || {
       _id: "",
       name: "",
       type: "info",
@@ -506,15 +521,15 @@ const getTagById = (id: string) => {
 };
 
 // 加载标签
-const loadTags = async () => {
+const loadTags = async (force = false) => {
+  loading.value = true;
   try {
-    const res = await forumApi.getAllTags();
-    if (res.success) {
-      tags.value = res.data;
-    }
+    await forumStore.fetchTags(force);
   } catch (error) {
     console.error("加载标签失败:", error);
     ElMessage.error("获取标签失败，请刷新重试");
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -534,25 +549,38 @@ const loadPosts = async (resetPage = false) => {
   });
 
   try {
-    const res = await forumApi.getPosts({
+    const params = {
       page: pagination.page,
       limit: pagination.limit,
-      filter: currentFilter.value as "latest" | "hot" | "recommended",
+      filter: currentFilter.value,
       tags: selectedTags.value.length > 0 ? selectedTags.value : undefined,
-    });
+      forceRefresh: resetPage,
+    };
 
-    if (res.success) {
+    const result = await forumStore.fetchPosts(params);
+    console.log(result);
+    if (result) {
       // 如果是第一页，则替换数据；否则追加数据
       if (pagination.page === 1) {
-        posts.value = res.data;
+        posts.value = result.data;
       } else {
-        posts.value = [...posts.value, ...res.data];
+        // 合并数据，确保不重复
+        const newPosts = result.data.filter(
+          (newPost: any) =>
+            !posts.value.some(
+              (existingPost) => existingPost._id === newPost._id
+            )
+        );
+        posts.value = [...posts.value, ...newPosts];
       }
 
-      pagination.total = res.total;
-      pagination.totalPages = res.totalPages;
+      pagination.total = result.total || 0;
+      pagination.totalPages = result.totalPages || 0;
     } else {
-      ElMessage.error(res.message || "获取帖子失败");
+      if (pagination.page === 1) {
+        posts.value = [];
+      }
+      ElMessage.warning("没有更多帖子了");
     }
   } catch (error) {
     console.error("加载帖子失败:", error);
@@ -603,17 +631,17 @@ const submitPost = async () => {
   }
 
   try {
-    const res = await forumApi.createPost({
+    const postData = {
+      title: "匿名发布", // 添加必须的标题字段
       content: newPost.content,
       tags: newPost.tags,
-      anonymous: newPost.anonymous,
-    });
+      isAnonymous: newPost.anonymous, // 重命名属性以匹配API
+    };
 
-    if (res.success) {
+    const result = await forumStore.createPost(postData);
+
+    if (result) {
       ElMessage.success("发布成功");
-
-      // 将新帖子添加到列表头部
-      posts.value.unshift(res.data);
 
       // 重置表单
       cancelPost();
@@ -621,7 +649,7 @@ const submitPost = async () => {
       // 重新加载第一页帖子
       loadPosts(true);
     } else {
-      ElMessage.error(res.message || "发布失败");
+      ElMessage.error("发布失败");
     }
   } catch (error) {
     console.error("发布帖子失败:", error);
@@ -635,14 +663,14 @@ const toggleComments = async (post: Post) => {
   post.showComments = !post.showComments;
 
   // 如果是显示评论，并且还没有加载过评论，则加载评论
-  if (post.showComments && !post.comments) {
+  if (post.showComments && (!post.comments || post.comments.length === 0)) {
     try {
-      const res = await forumApi.getPostComments(post._id);
+      const response = await forumStore.fetchComments(post._id);
 
-      if (res.success) {
-        post.comments = res.data;
-      } else {
-        ElMessage.error(res.message || "获取评论失败");
+      if (response && response.comments && response.comments.length > 0) {
+        post.comments = response.comments;
+      } else if (!post.comments) {
+        post.comments = [];
       }
     } catch (error) {
       console.error("加载评论失败:", error);
@@ -660,18 +688,12 @@ const toggleComments = async (post: Post) => {
 // 点赞帖子
 const toggleLike = async (post: Post) => {
   try {
-    const res = await forumApi.likePost(post._id);
+    const success = await forumStore.likePost(post._id);
 
-    if (res.success) {
-      // 更新帖子的点赞状态和数量
-      post.liked = res.data.liked;
-      post.disliked = res.data.disliked;
-      post.likes = res.data.likes;
-      post.dislikes = res.data.dislikes;
-
-      ElMessage.success(res.message);
+    if (success) {
+      ElMessage.success("点赞成功");
     } else {
-      ElMessage.error(res.message || "操作失败");
+      ElMessage.error("操作失败");
     }
   } catch (error) {
     console.error("点赞失败:", error);
@@ -682,21 +704,15 @@ const toggleLike = async (post: Post) => {
 // 踩帖子
 const toggleDislike = async (post: Post) => {
   try {
-    const res = await forumApi.dislikePost(post._id);
+    const success = await forumStore.dislikePost(post._id);
 
-    if (res.success) {
-      // 更新帖子的点赞状态和数量
-      post.liked = res.data.liked;
-      post.disliked = res.data.disliked;
-      post.likes = res.data.likes;
-      post.dislikes = res.data.dislikes;
-
-      ElMessage.success(res.message);
+    if (success) {
+      ElMessage.success("踩帖成功");
     } else {
-      ElMessage.error(res.message || "操作失败");
+      ElMessage.error("操作失败");
     }
   } catch (error) {
-    console.error("点踩失败:", error);
+    console.error("踩帖失败:", error);
     ElMessage.error("操作失败，请重试");
   }
 };
@@ -722,36 +738,12 @@ const replyToComment = (postId: string, comment: Comment | Reply) => {
 // 点赞评论
 const likeComment = async (postId: string, commentId: string) => {
   try {
-    const res = await forumApi.likeComment(commentId);
+    const success = await forumStore.likeComment(commentId);
 
-    if (res.success) {
-      // 找到对应的评论并更新状态
-      const post = posts.value.find((p) => p._id === postId);
-      if (post && post.comments) {
-        // 查找是否是顶层评论
-        let comment = post.comments.find((c) => c._id === commentId);
-
-        if (comment) {
-          comment.liked = res.data.liked;
-          comment.likes = res.data.likes;
-        } else {
-          // 可能是评论回复
-          for (const topComment of post.comments) {
-            if (topComment.replies) {
-              const reply = topComment.replies.find((r) => r._id === commentId);
-              if (reply) {
-                reply.liked = res.data.liked;
-                reply.likes = res.data.likes;
-                break;
-              }
-            }
-          }
-        }
-      }
-
-      ElMessage.success(res.message);
+    if (success) {
+      ElMessage.success("点赞成功");
     } else {
-      ElMessage.error(res.message || "操作失败");
+      ElMessage.error("操作失败");
     }
   } catch (error) {
     console.error("点赞评论失败:", error);
@@ -768,12 +760,14 @@ const submitComment = async (postId: string) => {
   }
 
   try {
-    const res = await forumApi.createComment(postId, {
+    const commentData = {
       content,
-      anonymous: commentAnonymous[postId],
-    });
+      isAnonymous: commentAnonymous[postId],
+    };
 
-    if (res.success) {
+    const result = await forumStore.createComment(postId, commentData);
+
+    if (result) {
       // 找到帖子并添加评论
       const post = posts.value.find((p) => p._id === postId);
       if (post) {
@@ -781,7 +775,7 @@ const submitComment = async (postId: string) => {
           post.comments = [];
         }
 
-        post.comments.unshift(res.data);
+        post.comments.unshift(result);
         post.commentCount = (post.commentCount || 0) + 1;
       }
 
@@ -790,7 +784,7 @@ const submitComment = async (postId: string) => {
 
       ElMessage.success("评论成功");
     } else {
-      ElMessage.error(res.message || "评论失败");
+      ElMessage.error("评论失败");
     }
   } catch (error) {
     console.error("提交评论失败:", error);
@@ -806,13 +800,36 @@ const loadMorePosts = () => {
   loadPosts();
 };
 
+// 监听路由变化
+watch(
+  () => route.path,
+  () => {
+    // 当离开论坛页面时，记录当前滚动位置
+    if (!route.path.includes("/forum")) {
+      sessionStorage.setItem("forumScrollPosition", window.scrollY.toString());
+    }
+  }
+);
+
 // 组件挂载时加载数据
 onMounted(async () => {
   // 先加载标签
   await loadTags();
 
   // 再加载帖子
-  loadPosts(true);
+  await loadPosts(true);
+
+  // 恢复滚动位置（如果有）
+  const savedPosition = sessionStorage.getItem("forumScrollPosition");
+  if (savedPosition) {
+    window.scrollTo(0, parseInt(savedPosition));
+  }
+});
+
+// 组件销毁前清理
+onBeforeUnmount(() => {
+  // 记录当前滚动位置
+  sessionStorage.setItem("forumScrollPosition", window.scrollY.toString());
 });
 </script>
 

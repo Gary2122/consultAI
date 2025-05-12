@@ -38,6 +38,7 @@ import { login, getLoginStatus } from "@/api/user";
 import type { FormInstance } from "element-plus";
 import { useUserStore } from "@/stores/user";
 import socketService from "@/services/socket";
+import { ElMessage } from "element-plus";
 
 const router = useRouter();
 const loginFormRef = ref<FormInstance | null>(null);
@@ -58,34 +59,46 @@ const loginRules = {
 };
 
 const handleLogin = () => {
-  loginFormRef.value?.validate((valid) => {
+  loginFormRef.value?.validate(async (valid) => {
     if (valid) {
-      const { username, password } = loginForm;
-      login(username, password).then((res) => {
-        const { token, user } = res.data;
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
-        userStore.setToken(token);
-        userStore.setUserInfo(user);
+      try {
+        const { username, password } = loginForm;
+        const response = await login(username, password);
 
-        // 初始化Socket.IO连接
-        socketService.init();
-        socketService.connect(token);
-        console.log("Socket.IO服务初始化并连接 - 登录成功");
+        if (response.success) {
+          const { token, user } = response;
+          localStorage.setItem("token", token);
+          localStorage.setItem("user", JSON.stringify(user));
+          userStore.setToken(token);
+          userStore.setUserInfo(user);
 
-        router.replace("/home");
-      });
+          // 初始化Socket.IO连接
+          socketService.init();
+          socketService.connect(token);
+          console.log("Socket.IO服务初始化并连接 - 登录成功");
+
+          router.replace("/home");
+        } else {
+          ElMessage.error(response.message || "登录失败，请检查用户名和密码");
+        }
+      } catch (error: any) {
+        console.error("登录失败:", error);
+        ElMessage.error(error.message || "登录失败，请稍后重试");
+      }
     }
   });
 };
+
 // 检测是否登录过，如果是则自动跳转到首页
 const handleAutoLogin = async () => {
-  const res = await getLoginStatus();
-  const { success: userLoginStatus } = res.data;
-  if (!userLoginStatus) {
-    return;
+  try {
+    const response = await getLoginStatus();
+    if (response.success) {
+      router.replace("/home");
+    }
+  } catch (error) {
+    console.error("检查登录状态失败:", error);
   }
-  router.replace("/home");
 };
 
 onMounted(() => {
