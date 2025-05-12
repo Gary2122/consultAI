@@ -57,7 +57,7 @@
     <THeader class="header h-68"></THeader>
     <div class="content flex-ss">
       <TSide></TSide>
-      <div class="chatBox" :class="{ 'forum-view': currentRoute === 'Forum' }">
+      <div class="chatBox" :class="{ 'forum-view': currentRoute === 'forum' }">
         <router-view></router-view>
       </div>
       <div class="AIChatBox">

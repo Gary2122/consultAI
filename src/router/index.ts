@@ -25,19 +25,6 @@ const routes: Array<RouteRecordRaw> = [
     name: "Register",
     component: Register,
   },
-  {
-    path: "/home",
-    component: () => import("@/views/home/index.vue"),
-    meta: { requiresAuth: true },
-    children: [
-      {
-        path: "forum",
-        name: "Forum",
-        component: () => import("@/views/home/forum/index.vue"),
-        meta: { requiresAuth: true },
-      },
-    ],
-  },
   homeRoutes,
 ];
 

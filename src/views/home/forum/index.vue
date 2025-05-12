@@ -382,13 +382,13 @@ const currentFilter = ref("latest");
 const loading = ref(false);
 
 // 标签列表
-const tags = ref([]);
+const tags = ref<Tag[]>([]);
 
 // 选中的标签ID
 const selectedTags = ref<string[]>([]);
 
 // 帖子列表数据
-const posts = ref([]);
+const posts = ref<Post[]>([]);
 
 // 分页数据
 const pagination = reactive({
@@ -401,7 +401,7 @@ const pagination = reactive({
 // 新帖子内容
 const newPost = reactive({
   content: "",
-  tags: [],
+  tags: [] as string[],
   anonymous: true,
 });
 
@@ -409,8 +409,8 @@ const newPost = reactive({
 const isCreatingPost = ref(false);
 
 // 评论输入
-const commentInputs = reactive({});
-const commentAnonymous = reactive({});
+const commentInputs = reactive<Record<string, string>>({});
+const commentAnonymous = reactive<Record<string, boolean>>({});
 
 // 是否有更多帖子
 const hasMorePosts = computed(() => {
@@ -421,6 +421,66 @@ const hasMorePosts = computed(() => {
 const filteredPosts = computed(() => {
   return posts.value;
 });
+
+// 添加类型定义
+interface Tag {
+  _id: string;
+  name: string;
+  type: string;
+  description?: string;
+  order?: number;
+  postCount?: number;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface Author {
+  _id: string | null;
+  username: string;
+  avatar: string;
+  status?: string;
+}
+
+interface Reply {
+  _id: string;
+  author: Author;
+  content: string;
+  createdAt: string;
+  likes: number;
+  liked: boolean;
+  anonymous: boolean;
+  replyTo?: {
+    username: string;
+  };
+}
+
+interface Comment {
+  _id: string;
+  author: Author;
+  content: string;
+  createdAt: string;
+  likes: number;
+  liked: boolean;
+  anonymous: boolean;
+  replies?: Reply[];
+}
+
+interface Post {
+  _id: string;
+  author: Author;
+  content: string;
+  createdAt: string;
+  tags: Tag[];
+  likes: number;
+  dislikes: number;
+  liked: boolean;
+  disliked: boolean;
+  anonymous: boolean;
+  commentCount: number;
+  comments?: Comment[];
+  showComments?: boolean;
+}
 
 // 格式化时间
 const formatTimeAgo = (time: string) => {
@@ -438,7 +498,7 @@ const formatTimeAgo = (time: string) => {
 const getTagById = (id: string) => {
   return (
     tags.value.find((tag) => tag._id === id) || {
-      id: 0,
+      _id: "",
       name: "",
       type: "info",
     }
@@ -570,7 +630,7 @@ const submitPost = async () => {
 };
 
 // 切换评论显示
-const toggleComments = async (post) => {
+const toggleComments = async (post: Post) => {
   // 切换显示状态
   post.showComments = !post.showComments;
 
@@ -598,7 +658,7 @@ const toggleComments = async (post) => {
 };
 
 // 点赞帖子
-const toggleLike = async (post) => {
+const toggleLike = async (post: Post) => {
   try {
     const res = await forumApi.likePost(post._id);
 
@@ -620,7 +680,7 @@ const toggleLike = async (post) => {
 };
 
 // 踩帖子
-const toggleDislike = async (post) => {
+const toggleDislike = async (post: Post) => {
   try {
     const res = await forumApi.dislikePost(post._id);
 
@@ -642,7 +702,7 @@ const toggleDislike = async (post) => {
 };
 
 // 回复评论
-const replyToComment = (postId, comment) => {
+const replyToComment = (postId: string, comment: Comment | Reply) => {
   // 设置评论内容为回复格式
   commentInputs[postId] = `回复 @${
     comment.anonymous ? "匿名用户" : comment.author.username
@@ -660,7 +720,7 @@ const replyToComment = (postId, comment) => {
 };
 
 // 点赞评论
-const likeComment = async (postId, commentId) => {
+const likeComment = async (postId: string, commentId: string) => {
   try {
     const res = await forumApi.likeComment(commentId);
 
@@ -700,7 +760,7 @@ const likeComment = async (postId, commentId) => {
 };
 
 // 提交评论
-const submitComment = async (postId) => {
+const submitComment = async (postId: string) => {
   const content = commentInputs[postId];
   if (!content || !content.trim()) {
     ElMessage.warning("评论内容不能为空");
