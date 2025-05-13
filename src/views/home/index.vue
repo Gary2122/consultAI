@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-13 20:44:12
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-06 10:21:44
+ * @LastEditTime: 2025-05-13 19:45:03
 -->
 <style lang="scss" scoped>
 .home {
@@ -38,17 +38,6 @@
       // padding: 20px;
       margin-left: 20px;
     }
-
-    // 论坛页面专用样式
-    .forum-view {
-      padding: 0;
-
-      .forum-container {
-        border-radius: 0;
-        height: 100%;
-        padding-bottom: 70px;
-      }
-    }
   }
 }
 </style>
@@ -57,7 +46,7 @@
     <THeader class="header h-68"></THeader>
     <div class="content flex-ss">
       <TSide></TSide>
-      <div class="chatBox" :class="{ 'forum-view': currentRoute === 'forum' }">
+      <div class="chatBox">
         <router-view></router-view>
       </div>
       <div class="AIChatBox">

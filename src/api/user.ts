@@ -1,3 +1,11 @@
+/*
+ * @Descripttion:
+ * @version:
+ * @Author: Garrison
+ * @Date: 2025-04-22 12:50:26
+ * @LastEditors: sueRimn
+ * @LastEditTime: 2025-05-13 20:07:28
+ */
 import request from "@/utils/request";
 
 // 用户登录
@@ -24,13 +32,13 @@ export const getLoginStatus = () => {
 
 // 获取用户资料 (可选参数userId，不提供则获取自己的资料)
 export const getUserProfile = (userId?: string) => {
-  const url = userId ? `/users/profile/${userId}` : "/users/profile";
+  const url = userId ? `/api/users/profile/${userId}` : "/api/users/profile";
   return request.get(url);
 };
 
 // 更新用户资料
 export const updateUserProfile = (profileData: any) => {
-  return request.put("/users/profile", profileData);
+  return request.put("/api/users/profile", profileData);
 };
 
 // 添加用户活动记录
@@ -39,7 +47,7 @@ export const addUserActivity = (activityData: {
   title: string;
   description?: string;
 }) => {
-  return request.post("/users/profile/activity", activityData);
+  return request.post("/api/users/profile/activity", activityData);
 };
 
 // 添加测评结果
@@ -48,5 +56,5 @@ export const addUserAssessment = (assessmentData: {
   score: number;
   description?: string;
 }) => {
-  return request.post("/users/profile/assessment", assessmentData);
+  return request.post("/api/users/profile/assessment", assessmentData);
 };

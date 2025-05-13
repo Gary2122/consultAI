@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-30 16:12:37
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-06 10:23:37
+ * @LastEditTime: 2025-05-13 20:12:42
 -->
 <template>
   <div class="user-settings-container">
@@ -76,6 +76,7 @@
           :model="userProfile"
           label-position="top"
           class="settings-form"
+          v-loading="loading"
         >
           <el-form-item label="用户名">
             <el-input
@@ -109,8 +110,14 @@
               <el-radio label="other">其他</el-radio>
             </el-radio-group>
           </el-form-item>
+          <el-form-item label="所在地">
+            <el-input
+              v-model="userProfile.location"
+              placeholder="请输入所在地"
+            ></el-input>
+          </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="saveProfile"
+            <el-button type="primary" @click="saveProfile" :loading="loading"
               >保存个人资料</el-button
             >
           </el-form-item>
@@ -443,28 +450,39 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { ElMessage } from "element-plus";
+import { getUserProfile, updateUserProfile } from "@/api/user";
+import { useRouter } from "vue-router";
+import { useUserStore } from "@/stores/user";
+
+const router = useRouter();
+const userStore = useUserStore();
+
+// 加载状态
+const loading = ref(false);
 
 // 当前激活的菜单项
 const activeMenu = ref("profile");
 
 // 用户基本信息
 const userInfo = reactive({
-  id: "10086",
-  username: "WeiLingUser",
-  avatar: "/src/assets/img/home/avartal.jpg",
-  phone: "138****1234",
-  email: "user@example.com",
+  id: "",
+  username: "",
+  avatar: "",
+  phone: "",
+  email: "",
   twoFactorEnabled: false,
 });
 
 // 个人资料表单
 const userProfile = reactive({
-  username: userInfo.username,
-  bio: "这是一段个人简介，可以介绍自己的兴趣爱好或者其他个人信息。",
+  username: "",
+  bio: "",
   birthday: "",
   gender: "male",
+  location: "",
+  email: "",
 });
 
 // 隐私设置
@@ -541,11 +559,78 @@ const handleMenuSelect = (index: string) => {
   activeMenu.value = index;
 };
 
+// 获取用户资料
+const fetchUserProfile = async () => {
+  loading.value = true;
+  try {
+    const response = await getUserProfile();
+
+    if (response.success) {
+      const profileData = response.data;
+
+      // 更新用户基本信息
+      userInfo.id = profileData._id || profileData.id;
+      userInfo.username = profileData.username;
+      userInfo.avatar = profileData.avatar;
+      userInfo.email = profileData.email;
+      userInfo.phone = profileData.phone || "";
+      userInfo.twoFactorEnabled = profileData.twoFactorEnabled || false;
+
+      // 更新个人资料表单
+      userProfile.username = profileData.username;
+      userProfile.bio = profileData.bio || "";
+      userProfile.birthday = profileData.birthday || "";
+      userProfile.gender = profileData.gender || "male";
+      userProfile.location = profileData.location || "";
+      userProfile.email = profileData.email || "";
+    } else {
+      ElMessage.error("获取用户资料失败");
+    }
+  } catch (error) {
+    console.error("获取用户资料失败:", error);
+    ElMessage.error("获取用户资料失败，请稍后重试");
+  } finally {
+    loading.value = false;
+  }
+};
+
 // 保存个人资料
-const saveProfile = () => {
-  // 这里模拟保存个人资料
-  ElMessage.success("个人资料保存成功");
-  userInfo.username = userProfile.username;
+const saveProfile = async () => {
+  // 表单验证
+  if (!userProfile.username.trim()) {
+    ElMessage.warning("用户名不能为空");
+    return;
+  }
+
+  loading.value = true;
+  try {
+    const profileData = {
+      username: userProfile.username,
+      bio: userProfile.bio,
+      birthday: userProfile.birthday,
+      gender: userProfile.gender,
+      location: userProfile.location,
+    };
+
+    const response = await updateUserProfile(profileData);
+
+    if (response.success) {
+      ElMessage.success("个人资料保存成功");
+
+      // 更新本地用户信息
+      userInfo.username = userProfile.username;
+
+      // 重新获取最新的用户资料
+      await fetchUserProfile();
+    } else {
+      ElMessage.error(response.message || "保存失败，请稍后重试");
+    }
+  } catch (error: any) {
+    console.error("保存个人资料失败:", error);
+    ElMessage.error(error.message || "保存个人资料失败，请稍后重试");
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 修改密码
@@ -568,15 +653,29 @@ const changePassword = () => {
 
 // 退出登录
 const handleLogout = () => {
-  // 这里处理退出登录逻辑
+  // 清除用户信息和令牌
+  userStore.logout();
+
+  // 清除本地存储的令牌和用户信息
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+
   ElMessage.success("退出登录成功");
+
+  // 跳转到登录页
+  router.push("/user/login");
 };
+
+// 页面加载时获取用户资料
+onMounted(async () => {
+  await fetchUserProfile();
+});
 </script>
 
 <style lang="scss" scoped>
 .user-settings-container {
   display: flex;
-  height: 100vh;
+  height: 100%;
   background-color: #36393f;
   color: #dcddde;
 }
