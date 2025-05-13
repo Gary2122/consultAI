@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-29 15:28:06
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-12 20:04:33
+ * @LastEditTime: 2025-05-13 19:58:16
 -->
 <template>
   <div class="forum-container">
@@ -51,317 +51,320 @@
         </div>
       </div>
     </div>
-
-    <!-- 创建新帖子 -->
-    <div class="create-post-container">
-      <div class="user-avatar">
-        <el-avatar
-          :src="userStore.userInfo?.avatar || ''"
-          icon="el-icon-user-solid"
-          :size="40"
-        ></el-avatar>
-        <div class="anonymous-badge">匿名</div>
-      </div>
-      <div class="post-input-container">
-        <div
-          v-if="!isCreatingPost"
-          class="create-post-placeholder"
-          @click="startCreatePost"
-        >
-          分享你的心情、困惑或想法...
+    <el-scrollbar ref="messagesScrollRef" class="overflow-hidden">
+      <!-- 创建新帖子 -->
+      <div class="create-post-container">
+        <div class="user-avatar">
+          <el-avatar
+            :src="userStore.userInfo?.avatar || ''"
+            icon="el-icon-user-solid"
+            :size="40"
+          ></el-avatar>
+          <div class="anonymous-badge">匿名</div>
         </div>
-        <div v-else class="post-editor">
-          <el-input
-            type="textarea"
-            v-model="newPost.content"
-            placeholder="分享你的心情、困惑或想法..."
-            :rows="3"
-            resize="none"
-          ></el-input>
-
-          <div class="post-options">
-            <div class="post-tags">
-              <el-select
-                v-model="newPost.tags"
-                multiple
-                collapse-tags
-                placeholder="选择话题标签"
-                size="small"
-              >
-                <el-option
-                  v-for="tag in tags"
-                  :key="tag._id"
-                  :label="tag.name"
-                  :value="tag._id"
-                ></el-option>
-              </el-select>
-            </div>
-
-            <div class="post-actions">
-              <el-checkbox v-model="newPost.anonymous">匿名发布</el-checkbox>
-              <el-button size="small" @click="cancelPost">取消</el-button>
-              <el-button
-                type="primary"
-                size="small"
-                :disabled="!newPost.content.trim()"
-                @click="submitPost"
-                >发布</el-button
-              >
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 帖子列表 -->
-    <div class="posts-container">
-      <div
-        v-for="post in filteredPosts"
-        :key="post._id"
-        class="post-card"
-        :data-post-id="post._id"
-      >
-        <div class="post-header">
-          <div class="post-author">
-            <el-avatar
-              :size="36"
-              :src="post.author.avatar"
-              icon="el-icon-user-solid"
-            ></el-avatar>
-            <div class="author-info">
-              <span class="author-name">{{
-                post.anonymous ? "匿名用户" : post.author.username
-              }}</span>
-              <span class="post-time">{{ formatTimeAgo(post.createdAt) }}</span>
-            </div>
-          </div>
-          <div class="post-menu">
-            <el-dropdown trigger="click">
-              <i class="el-icon-more"></i>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item icon="el-icon-star-off"
-                    >收藏</el-dropdown-item
-                  >
-                  <el-dropdown-item icon="el-icon-warning-outline"
-                    >举报</el-dropdown-item
-                  >
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
-        </div>
-
-        <div class="post-content">
-          {{ post.content }}
-        </div>
-
-        <div class="post-tags" v-if="post.tags && post.tags.length > 0">
-          <el-tag
-            v-for="tag in post.tags"
-            :key="tag._id"
-            size="small"
-            effect="dark"
-            :type="tag.type"
-          >
-            {{ tag.name }}
-          </el-tag>
-        </div>
-
-        <div class="post-actions">
+        <div class="post-input-container">
           <div
-            class="action-btn"
-            :class="{ active: post.liked }"
-            @click="toggleLike(post)"
+            v-if="!isCreatingPost"
+            class="create-post-placeholder"
+            @click="startCreatePost"
           >
-            <i class="el-icon-top"></i>
-            <span>{{ post.likes }}</span>
+            分享你的心情、困惑或想法...
           </div>
-          <div
-            class="action-btn"
-            :class="{ active: post.disliked }"
-            @click="toggleDislike(post)"
-          >
-            <i class="el-icon-bottom"></i>
-            <span>{{ post.dislikes }}</span>
-          </div>
-          <div class="action-btn" @click="toggleComments(post)">
-            <i class="el-icon-chat-dot-round"></i>
-            <span>{{ post.commentCount || 0 }}</span>
-          </div>
-          <div class="action-btn">
-            <i class="el-icon-share"></i>
-            <span>分享</span>
-          </div>
-        </div>
+          <div v-else class="post-editor">
+            <el-input
+              type="textarea"
+              v-model="newPost.content"
+              placeholder="分享你的心情、困惑或想法..."
+              :rows="3"
+              resize="none"
+            ></el-input>
 
-        <!-- 评论区 -->
-        <div class="comments-section" v-if="post.showComments">
-          <!-- 评论列表 -->
-          <div
-            class="comments-list"
-            v-if="post.comments && post.comments.length > 0"
-          >
-            <div
-              v-for="comment in post.comments"
-              :key="comment._id"
-              class="comment-item"
-            >
-              <div class="comment-avatar">
-                <el-avatar
-                  :size="28"
-                  :src="comment.author.avatar"
-                  icon="el-icon-user-solid"
-                ></el-avatar>
-              </div>
-              <div class="comment-content">
-                <div class="comment-header">
-                  <span class="comment-author">{{
-                    comment.anonymous ? "匿名用户" : comment.author.username
-                  }}</span>
-                  <span class="comment-time">{{
-                    formatTimeAgo(comment.createdAt)
-                  }}</span>
-                </div>
-                <div class="comment-text">{{ comment.content }}</div>
-                <div class="comment-actions">
-                  <span
-                    class="comment-like"
-                    @click="likeComment(post._id, comment._id)"
-                  >
-                    <i
-                      class="el-icon-top"
-                      :class="{ active: comment.liked }"
-                    ></i>
-                    <span>{{ comment.likes }}</span>
-                  </span>
-                  <span
-                    class="comment-reply"
-                    @click="replyToComment(post._id, comment)"
-                    >回复</span
-                  >
-                </div>
-
-                <!-- 评论回复 -->
-                <div
-                  class="comment-replies"
-                  v-if="comment.replies && comment.replies.length > 0"
+            <div class="post-options">
+              <div class="post-tags">
+                <el-select
+                  v-model="newPost.tags"
+                  multiple
+                  collapse-tags
+                  placeholder="选择话题标签"
+                  size="small"
                 >
+                  <el-option
+                    v-for="tag in tags"
+                    :key="tag._id"
+                    :label="tag.name"
+                    :value="tag._id"
+                  ></el-option>
+                </el-select>
+              </div>
+
+              <div class="post-actions">
+                <el-checkbox v-model="newPost.anonymous">匿名发布</el-checkbox>
+                <el-button size="small" @click="cancelPost">取消</el-button>
+                <el-button
+                  type="primary"
+                  size="small"
+                  :disabled="!newPost.content.trim()"
+                  @click="submitPost"
+                  >发布</el-button
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 帖子列表 -->
+      <div class="posts-container">
+        <div
+          v-for="post in filteredPosts"
+          :key="post._id"
+          class="post-card"
+          :data-post-id="post._id"
+        >
+          <div class="post-header">
+            <div class="post-author">
+              <el-avatar
+                :size="36"
+                :src="post.author.avatar"
+                icon="el-icon-user-solid"
+              ></el-avatar>
+              <div class="author-info">
+                <span class="author-name">{{
+                  post.anonymous ? "匿名用户" : post.author.username
+                }}</span>
+                <span class="post-time">{{
+                  formatTimeAgo(post.createdAt)
+                }}</span>
+              </div>
+            </div>
+            <div class="post-menu">
+              <el-dropdown trigger="click">
+                <i class="el-icon-more"></i>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item icon="el-icon-star-off"
+                      >收藏</el-dropdown-item
+                    >
+                    <el-dropdown-item icon="el-icon-warning-outline"
+                      >举报</el-dropdown-item
+                    >
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
+          </div>
+
+          <div class="post-content">
+            {{ post.content }}
+          </div>
+
+          <div class="post-tags" v-if="post.tags && post.tags.length > 0">
+            <el-tag
+              v-for="tag in post.tags"
+              :key="tag._id"
+              size="small"
+              effect="dark"
+              :type="tag.type"
+            >
+              {{ tag.name }}
+            </el-tag>
+          </div>
+
+          <div class="post-actions">
+            <div
+              class="action-btn"
+              :class="{ active: post.liked }"
+              @click="toggleLike(post)"
+            >
+              <i class="el-icon-top"></i>
+              <span>{{ post.likes }}</span>
+            </div>
+            <div
+              class="action-btn"
+              :class="{ active: post.disliked }"
+              @click="toggleDislike(post)"
+            >
+              <i class="el-icon-bottom"></i>
+              <span>{{ post.dislikes }}</span>
+            </div>
+            <div class="action-btn" @click="toggleComments(post)">
+              <i class="el-icon-chat-dot-round"></i>
+              <span>{{ post.commentCount || 0 }}</span>
+            </div>
+            <div class="action-btn">
+              <i class="el-icon-share"></i>
+              <span>分享</span>
+            </div>
+          </div>
+
+          <!-- 评论区 -->
+          <div class="comments-section" v-if="post.showComments">
+            <!-- 评论列表 -->
+            <div
+              class="comments-list"
+              v-if="post.comments && post.comments.length > 0"
+            >
+              <div
+                v-for="comment in post.comments"
+                :key="comment._id"
+                class="comment-item"
+              >
+                <div class="comment-avatar">
+                  <el-avatar
+                    :size="28"
+                    :src="comment.author.avatar"
+                    icon="el-icon-user-solid"
+                  ></el-avatar>
+                </div>
+                <div class="comment-content">
+                  <div class="comment-header">
+                    <span class="comment-author">{{
+                      comment.anonymous ? "匿名用户" : comment.author.username
+                    }}</span>
+                    <span class="comment-time">{{
+                      formatTimeAgo(comment.createdAt)
+                    }}</span>
+                  </div>
+                  <div class="comment-text">{{ comment.content }}</div>
+                  <div class="comment-actions">
+                    <span
+                      class="comment-like"
+                      @click="likeComment(post._id, comment._id)"
+                    >
+                      <i
+                        class="el-icon-top"
+                        :class="{ active: comment.liked }"
+                      ></i>
+                      <span>{{ comment.likes }}</span>
+                    </span>
+                    <span
+                      class="comment-reply"
+                      @click="replyToComment(post._id, comment)"
+                      >回复</span
+                    >
+                  </div>
+
+                  <!-- 评论回复 -->
                   <div
-                    v-for="reply in comment.replies"
-                    :key="reply._id"
-                    class="reply-item"
+                    class="comment-replies"
+                    v-if="comment.replies && comment.replies.length > 0"
                   >
-                    <div class="reply-avatar">
-                      <el-avatar
-                        :size="24"
-                        :src="reply.author.avatar"
-                        icon="el-icon-user-solid"
-                      ></el-avatar>
-                    </div>
-                    <div class="reply-content">
-                      <div class="reply-header">
-                        <span class="reply-author">{{
-                          reply.anonymous ? "匿名用户" : reply.author.username
-                        }}</span>
-                        <span class="reply-time">{{
-                          formatTimeAgo(reply.createdAt)
-                        }}</span>
+                    <div
+                      v-for="reply in comment.replies"
+                      :key="reply._id"
+                      class="reply-item"
+                    >
+                      <div class="reply-avatar">
+                        <el-avatar
+                          :size="24"
+                          :src="reply.author.avatar"
+                          icon="el-icon-user-solid"
+                        ></el-avatar>
                       </div>
-                      <div class="reply-text">
-                        <span v-if="reply.replyTo" class="reply-to"
-                          >回复 @{{ reply.replyTo.username }}：</span
-                        >
-                        {{ reply.content }}
-                      </div>
-                      <div class="reply-actions">
-                        <span
-                          class="reply-like"
-                          @click="likeComment(post._id, reply._id)"
-                        >
-                          <i
-                            class="el-icon-top"
-                            :class="{ active: reply.liked }"
-                          ></i>
-                          <span>{{ reply.likes }}</span>
-                        </span>
-                        <span
-                          class="reply-reply"
-                          @click="replyToComment(post._id, reply)"
-                          >回复</span
-                        >
+                      <div class="reply-content">
+                        <div class="reply-header">
+                          <span class="reply-author">{{
+                            reply.anonymous ? "匿名用户" : reply.author.username
+                          }}</span>
+                          <span class="reply-time">{{
+                            formatTimeAgo(reply.createdAt)
+                          }}</span>
+                        </div>
+                        <div class="reply-text">
+                          <span v-if="reply.replyTo" class="reply-to"
+                            >回复 @{{ reply.replyTo.username }}：</span
+                          >
+                          {{ reply.content }}
+                        </div>
+                        <div class="reply-actions">
+                          <span
+                            class="reply-like"
+                            @click="likeComment(post._id, reply._id)"
+                          >
+                            <i
+                              class="el-icon-top"
+                              :class="{ active: reply.liked }"
+                            ></i>
+                            <span>{{ reply.likes }}</span>
+                          </span>
+                          <span
+                            class="reply-reply"
+                            @click="replyToComment(post._id, reply)"
+                            >回复</span
+                          >
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div class="empty-comments" v-else>
-            <i class="el-icon-chat-dot-round"></i>
-            <span>暂无评论，快来发表第一条评论吧</span>
-          </div>
-
-          <!-- 发表评论 -->
-          <div class="create-comment">
-            <div class="comment-avatar">
-              <el-avatar
-                :size="28"
-                :src="userStore.userInfo?.avatar || ''"
-                icon="el-icon-user-solid"
-              ></el-avatar>
+            <div class="empty-comments" v-else>
+              <i class="el-icon-chat-dot-round"></i>
+              <span>暂无评论，快来发表第一条评论吧</span>
             </div>
-            <div class="comment-input">
-              <el-input
-                v-model="commentInputs[post._id]"
-                placeholder="发表评论..."
-                size="small"
-                @keyup.enter="submitComment(post._id)"
-              >
-                <template #append>
-                  <el-button
-                    icon="el-icon-position"
-                    @click="submitComment(post._id)"
-                    :disabled="
-                      !commentInputs[post._id] ||
-                      !commentInputs[post._id].trim()
-                    "
-                  ></el-button>
-                </template>
-              </el-input>
-              <div class="comment-options">
-                <el-checkbox v-model="commentAnonymous[post._id]"
-                  >匿名评论</el-checkbox
+
+            <!-- 发表评论 -->
+            <div class="create-comment">
+              <div class="comment-avatar">
+                <el-avatar
+                  :size="28"
+                  :src="userStore.userInfo?.avatar || ''"
+                  icon="el-icon-user-solid"
+                ></el-avatar>
+              </div>
+              <div class="comment-input">
+                <el-input
+                  v-model="commentInputs[post._id]"
+                  placeholder="发表评论..."
+                  size="small"
+                  @keyup.enter="submitComment(post._id)"
                 >
+                  <template #append>
+                    <el-button
+                      icon="el-icon-position"
+                      @click="submitComment(post._id)"
+                      :disabled="
+                        !commentInputs[post._id] ||
+                        !commentInputs[post._id].trim()
+                      "
+                    ></el-button>
+                  </template>
+                </el-input>
+                <div class="comment-options">
+                  <el-checkbox v-model="commentAnonymous[post._id]"
+                    >匿名评论</el-checkbox
+                  >
+                </div>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- 加载中状态 -->
+        <div class="loading-state" v-if="loading">
+          <el-skeleton :rows="3" animated />
+          <el-skeleton :rows="3" animated />
+        </div>
+
+        <!-- 加载更多 -->
+        <div class="load-more" v-if="hasMorePosts && !loading">
+          <el-button type="text" @click="loadMorePosts">加载更多</el-button>
+        </div>
+
+        <!-- 无内容提示 -->
+        <div class="empty-posts" v-if="filteredPosts.length === 0 && !loading">
+          <i class="el-icon-chat-dot-round"></i>
+          <p>暂无相关内容</p>
+          <el-button type="primary" @click="startCreatePost"
+            >发布第一个帖子</el-button
+          >
+        </div>
       </div>
 
-      <!-- 加载中状态 -->
-      <div class="loading-state" v-if="loading">
-        <el-skeleton :rows="3" animated />
-        <el-skeleton :rows="3" animated />
-      </div>
-
-      <!-- 加载更多 -->
-      <div class="load-more" v-if="hasMorePosts && !loading">
-        <el-button type="text" @click="loadMorePosts">加载更多</el-button>
-      </div>
-
-      <!-- 无内容提示 -->
-      <div class="empty-posts" v-if="filteredPosts.length === 0 && !loading">
-        <i class="el-icon-chat-dot-round"></i>
-        <p>暂无相关内容</p>
-        <el-button type="primary" @click="startCreatePost"
-          >发布第一个帖子</el-button
-        >
-      </div>
-    </div>
-
-    <!-- 返回顶部 -->
-    <el-backtop target=".forum-container"></el-backtop>
+      <!-- 返回顶部 -->
+      <el-backtop target=".forum-container"></el-backtop>
+    </el-scrollbar>
   </div>
 </template>
 
@@ -376,7 +379,6 @@ import {
 } from "vue";
 import { ElMessage, ElLoading } from "element-plus";
 import dayjs from "dayjs";
-import * as forumApi from "@/api/forum";
 import { useUserStore } from "@/stores/user";
 import { useForumStore } from "@/stores/forum";
 import { useRoute } from "vue-router";
@@ -833,14 +835,20 @@ onBeforeUnmount(() => {
 });
 </script>
 
+<style scoped>
+:deep(.el-scrollbar) {
+  height: 80%;
+}
+</style>
+
 <style lang="scss" scoped>
 .forum-container {
   background-color: #36393f;
   color: #dcddde;
-  min-height: 100vh;
+  height: 100%;
   padding: 20px;
-  overflow-y: auto;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .forum-header {
