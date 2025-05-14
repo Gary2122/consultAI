@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-27 13:28:10
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-12 15:59:38
+ * @LastEditTime: 2025-05-14 20:06:07
 -->
 <template>
   <div class="friends-container">
@@ -137,7 +137,7 @@ onMounted(() => {
 
 .friends-left {
   width: 250px;
-  background-color: #2f3136;
+  background-color: var(--color-bg-main);
   color: #dcddde;
   display: flex;
   flex-direction: column;

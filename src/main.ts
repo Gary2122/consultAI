@@ -5,7 +5,7 @@ import router from "./router";
 import "@/assets/style/index";
 import "@/assets/style/_vars.scss";
 import "virtual:uno.css";
-import "@/style/theme.css";
+import "@/style/theme.css"; // Theme CSS
 import ElementPlus from "element-plus";
 // import "element-plus/dist/index.css";
 import Vue3Lottie from "vue3-lottie";

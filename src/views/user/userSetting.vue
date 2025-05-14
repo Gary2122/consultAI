@@ -304,13 +304,13 @@
           <div class="section-subtitle">主题</div>
           <div class="theme-options">
             <div
-              v-for="theme in themes"
+              v-for="theme in themeStore.themeList"
               :key="theme.value"
               :class="[
                 'theme-option',
-                { active: appearanceSettings.theme === theme.value },
+                { active: themeStore.currentTheme === theme.value },
               ]"
-              @click="appearanceSettings.theme = theme.value"
+              @click="setTheme(theme.value)"
             >
               <div
                 class="theme-preview"
@@ -455,9 +455,11 @@ import { ElMessage } from "element-plus";
 import { getUserProfile, updateUserProfile } from "@/api/user";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
+import { useThemeStore } from "@/stores/theme";
 
 const router = useRouter();
 const userStore = useUserStore();
+const themeStore = useThemeStore();
 
 // 加载状态
 const loading = ref(false);
@@ -517,34 +519,6 @@ const languageSettings = reactive({
   dateFormat: "YYYY-MM-DD",
   timeFormat: "24",
 });
-
-// 主题选项
-const themes = [
-  {
-    label: "深色主题",
-    value: "dark",
-    color: "#36393f",
-    sidebarColor: "#202225",
-  },
-  {
-    label: "浅色主题",
-    value: "light",
-    color: "#ffffff",
-    sidebarColor: "#f2f3f5",
-  },
-  {
-    label: "紫色主题",
-    value: "purple",
-    color: "#42275a",
-    sidebarColor: "#2e1437",
-  },
-  {
-    label: "海洋主题",
-    value: "ocean",
-    color: "#1a535c",
-    sidebarColor: "#0b7a75",
-  },
-];
 
 // 修改密码
 const showChangePassword = ref(false);
@@ -670,29 +644,34 @@ const handleLogout = () => {
 onMounted(async () => {
   await fetchUserProfile();
 });
+
+// 设置主题
+const setTheme = (theme: ThemeType) => {
+  themeStore.setTheme(theme);
+};
 </script>
 
 <style lang="scss" scoped>
 .user-settings-container {
   display: flex;
   height: 100%;
-  background-color: #36393f;
-  color: #dcddde;
+  background-color: var(--color-bg-main);
+  color: var(--color-text-normal);
 }
 
 .settings-sidebar {
   width: 240px;
-  background-color: #2f3136;
+  background-color: var(--color-bg-tertiary);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #202225;
+  border-right: 1px solid var(--color-border);
 
   .settings-title {
     padding: 20px;
     margin: 0;
     font-size: 16px;
     font-weight: 600;
-    color: white;
+    color: var(--color-text-normal);
   }
 
   .settings-menu {
@@ -700,19 +679,19 @@ onMounted(async () => {
     border-right: none;
 
     :deep(.el-menu-item) {
-      color: #b9bbbe;
+      color: var(--color-text-muted);
       height: 40px;
       line-height: 40px;
       background-color: transparent !important;
 
       &:hover {
-        color: white;
-        background-color: rgba(255, 255, 255, 0.05) !important;
+        color: var(--color-text-normal);
+        background-color: var(--color-hover) !important;
       }
 
       &.is-active {
-        color: white;
-        background-color: rgba(255, 255, 255, 0.08) !important;
+        color: var(--color-text-normal);
+        background-color: var(--color-active) !important;
       }
 
       i {
@@ -725,7 +704,7 @@ onMounted(async () => {
   .account-info {
     margin-top: auto;
     padding: 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--color-border);
     display: flex;
     align-items: center;
 
@@ -736,7 +715,7 @@ onMounted(async () => {
 
       .username {
         font-weight: 500;
-        color: white;
+        color: var(--color-text-normal);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -744,7 +723,7 @@ onMounted(async () => {
 
       .user-id {
         font-size: 12px;
-        color: #b9bbbe;
+        color: var(--color-text-muted);
       }
     }
   }
@@ -760,17 +739,17 @@ onMounted(async () => {
     margin: 0 auto;
 
     .section-title {
-      color: white;
+      color: var(--color-text-normal);
       font-size: 20px;
       font-weight: 600;
       margin-top: 0;
       margin-bottom: 24px;
       padding-bottom: 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid var(--color-border);
     }
 
     .section-subtitle {
-      color: white;
+      color: var(--color-text-normal);
       font-size: 16px;
       font-weight: 500;
       margin-bottom: 16px;
@@ -816,15 +795,15 @@ onMounted(async () => {
 
   .settings-form {
     :deep(.el-form-item__label) {
-      color: white;
+      color: var(--color-text-normal);
       font-weight: 500;
     }
 
     :deep(.el-input__inner),
     :deep(.el-textarea__inner) {
-      background-color: #40444b;
+      background-color: var(--color-input-bg);
       border: none;
-      color: white;
+      color: var(--color-input-text);
 
       &:focus {
         box-shadow: none;
@@ -832,16 +811,16 @@ onMounted(async () => {
     }
 
     :deep(.el-radio__label) {
-      color: #dcddde;
+      color: var(--color-text-normal);
     }
 
     :deep(.el-radio__input.is-checked .el-radio__inner) {
-      background-color: #5865f2;
-      border-color: #5865f2;
+      background-color: var(--color-primary);
+      border-color: var(--color-primary);
     }
 
     :deep(.el-radio__input.is-checked + .el-radio__label) {
-      color: #5865f2;
+      color: var(--color-primary);
     }
   }
 
@@ -859,7 +838,7 @@ onMounted(async () => {
       justify-content: space-between;
       align-items: center;
       padding: 16px;
-      background-color: #2f3136;
+      background-color: var(--color-bg-secondary);
       border-radius: 5px;
 
       .security-info,
@@ -871,7 +850,7 @@ onMounted(async () => {
           display: flex;
           align-items: center;
           font-weight: 500;
-          color: white;
+          color: var(--color-text-normal);
           margin-bottom: 4px;
 
           i {
@@ -883,7 +862,7 @@ onMounted(async () => {
         .privacy-desc,
         .notification-desc {
           font-size: 13px;
-          color: #b9bbbe;
+          color: var(--color-text-muted);
         }
       }
     }
@@ -916,15 +895,15 @@ onMounted(async () => {
         font-size: 13px;
         text-align: center;
         margin-top: 8px;
-        color: #b9bbbe;
+        color: var(--color-text-muted);
       }
 
       &.active .theme-preview {
-        border-color: #5865f2;
+        border-color: var(--color-primary);
       }
 
       &.active .theme-name {
-        color: white;
+        color: var(--color-text-normal);
       }
     }
   }
@@ -935,70 +914,70 @@ onMounted(async () => {
     .font-sample {
       margin-top: 16px;
       padding: 10px;
-      background-color: #2f3136;
+      background-color: var(--color-bg-secondary);
       border-radius: 5px;
-      color: white;
+      color: var(--color-text-normal);
     }
   }
 
   :deep(.el-slider) {
-    --el-slider-main-bg-color: #5865f2;
+    --el-slider-main-bg-color: var(--color-primary);
   }
 
   :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-    background-color: #5865f2;
-    border-color: #5865f2;
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
   }
 
   :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
-    color: #dcddde;
+    color: var(--color-text-normal);
   }
 
   :deep(.el-checkbox__label) {
-    color: #dcddde;
+    color: var(--color-text-normal);
   }
 
   :deep(.el-select-dropdown__item.selected) {
-    color: #5865f2;
+    color: var(--color-primary);
   }
 
   :deep(.el-switch.is-checked .el-switch__core) {
-    background-color: #5865f2;
-    border-color: #5865f2;
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
   }
 }
 
 :deep(.el-button--primary) {
-  background-color: #5865f2;
-  border-color: #5865f2;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
 
   &:hover,
   &:focus {
-    background-color: #4752c4;
-    border-color: #4752c4;
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary-light);
   }
 }
 
 :deep(.el-dialog) {
-  background-color: #36393f;
+  background-color: var(--color-bg-main);
 
   .el-dialog__title {
-    color: white;
+    color: var(--color-text-normal);
   }
 
   .el-dialog__body,
   .el-dialog__footer {
-    color: #dcddde;
+    color: var(--color-text-normal);
   }
 
   .el-form-item__label {
-    color: white;
+    color: var(--color-text-normal);
   }
 
   .el-input__inner {
-    background-color: #40444b;
+    background-color: var(--color-input-bg);
     border: none;
-    color: white;
+    color: var(--color-input-text);
   }
 }
 </style>

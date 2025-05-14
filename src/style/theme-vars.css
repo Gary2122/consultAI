@@ -1,0 +1,187 @@
+/* Theme Variables */
+
+/* Default theme (dark) */
+:root {
+  /* Base colors */
+  --color-primary: #5865f2;
+  --color-primary-light: #7289da;
+  --color-bg-main: #36393f;
+  --color-bg-secondary: #2f3136;
+  --color-bg-tertiary: #202225;
+  --color-text-normal: #dcddde;
+  --color-text-muted: #b9bbbe;
+  --color-text-link: #00aff4;
+  --color-header: #202225;
+  --color-accent: #5865f2;
+
+  /* Element colors */
+  --color-input-bg: #40444b;
+  --color-input-text: #dcddde;
+  --color-button-primary: #5865f2;
+  --color-button-primary-hover: #4752c4;
+  --color-button-secondary: #4f545c;
+  --color-button-secondary-hover: #686d73;
+  --color-border: #42464d;
+  --color-hover: rgba(255, 255, 255, 0.05);
+  --color-active: rgba(255, 255, 255, 0.08);
+  --color-message-self: #004fce;
+  --color-message-other: #3c3f45;
+
+  /* Transition duration for theme changes */
+  --theme-transition-duration: 0.3s;
+}
+
+/* Light Theme */
+html[data-theme="light"] {
+  --color-primary: #5865f2;
+  --color-primary-light: #7289da;
+  --color-bg-main: #ffffff;
+  --color-bg-secondary: #f2f3f5;
+  --color-bg-tertiary: #e3e5e8;
+  --color-text-normal: #2e3338;
+  --color-text-muted: #747f8d;
+  --color-text-link: #0068e0;
+  --color-header: #f2f3f5;
+  --color-accent: #5865f2;
+
+  --color-input-bg: #ebedef;
+  --color-input-text: #2e3338;
+  --color-button-primary: #5865f2;
+  --color-button-primary-hover: #4752c4;
+  --color-button-secondary: #e4e5e7;
+  --color-button-secondary-hover: #d4d6d9;
+  --color-border: #e3e5e8;
+  --color-hover: rgba(0, 0, 0, 0.05);
+  --color-active: rgba(0, 0, 0, 0.08);
+  --color-message-self: #5865f2;
+  --color-message-other: #f2f3f5;
+}
+
+/* Purple Theme */
+html[data-theme="purple"] {
+  --color-primary: #9b59b6;
+  --color-primary-light: #a77bc7;
+  --color-bg-main: #42275a;
+  --color-bg-secondary: #372152;
+  --color-bg-tertiary: #2e1437;
+  --color-text-normal: #f5f5f5;
+  --color-text-muted: #c5b8d7;
+  --color-text-link: #b392d0;
+  --color-header: #2e1437;
+  --color-accent: #9b59b6;
+
+  --color-input-bg: #513162;
+  --color-input-text: #f5f5f5;
+  --color-button-primary: #9b59b6;
+  --color-button-primary-hover: #8e44ad;
+  --color-button-secondary: #513162;
+  --color-button-secondary-hover: #5f3a76;
+  --color-border: #4b2d5b;
+  --color-hover: rgba(255, 255, 255, 0.05);
+  --color-active: rgba(255, 255, 255, 0.08);
+  --color-message-self: #8e44ad;
+  --color-message-other: #372152;
+}
+
+/* Ocean Theme */
+html[data-theme="ocean"] {
+  --color-primary: #3498db;
+  --color-primary-light: #5dade2;
+  --color-bg-main: #1a535c;
+  --color-bg-secondary: #115954;
+  --color-bg-tertiary: #0b7a75;
+  --color-text-normal: #f5f5f5;
+  --color-text-muted: #a7d2cb;
+  --color-text-link: #4fbdba;
+  --color-header: #0b7a75;
+  --color-accent: #3498db;
+
+  --color-input-bg: #1c6168;
+  --color-input-text: #f5f5f5;
+  --color-button-primary: #3498db;
+  --color-button-primary-hover: #2980b9;
+  --color-button-secondary: #1c6168;
+  --color-button-secondary-hover: #247175;
+  --color-border: #166964;
+  --color-hover: rgba(255, 255, 255, 0.05);
+  --color-active: rgba(255, 255, 255, 0.08);
+  --color-message-self: #2980b9;
+  --color-message-other: #115954;
+}
+
+/* Apply transitions to elements that change with theme */
+body,
+input,
+button,
+textarea,
+select,
+a,
+.message-content {
+  transition: background-color var(--theme-transition-duration) ease,
+    color var(--theme-transition-duration) ease,
+    border-color var(--theme-transition-duration) ease,
+    box-shadow var(--theme-transition-duration) ease;
+}
+
+/* Theme-based styling classes */
+.bg-theme-main {
+  background-color: var(--color-bg-main);
+}
+
+.bg-theme-secondary {
+  background-color: var(--color-bg-secondary);
+}
+
+.bg-theme-tertiary {
+  background-color: var(--color-bg-tertiary);
+}
+
+.text-theme-normal {
+  color: var(--color-text-normal);
+}
+
+.text-theme-muted {
+  color: var(--color-text-muted);
+}
+
+.text-theme-link {
+  color: var(--color-text-link);
+}
+
+.border-theme {
+  border-color: var(--color-border);
+}
+
+.button-theme-primary {
+  background-color: var(--color-button-primary);
+  color: white;
+}
+
+.button-theme-primary:hover {
+  background-color: var(--color-button-primary-hover);
+}
+
+.button-theme-secondary {
+  background-color: var(--color-button-secondary);
+  color: var(--color-text-normal);
+}
+
+.button-theme-secondary:hover {
+  background-color: var(--color-button-secondary-hover);
+}
+
+.input-theme {
+  background-color: var(--color-input-bg);
+  color: var(--color-input-text);
+  border-color: var(--color-border);
+}
+
+.message-theme-self {
+  background-color: var(--color-message-self);
+  color: white;
+}
+
+.message-theme-other {
+  background-color: var(--color-message-other);
+  color: var(--color-text-normal);
+}

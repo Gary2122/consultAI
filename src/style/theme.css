@@ -1,20 +1,56 @@
-/* 全局样式 */
+/* 
+ * Theme CSS - Imports theme variables
+ * This file is imported in main.ts
+ */
+
+/* Import theme variables */
+@import "./theme-vars.css";
+
+/* Apply theme-specific global styles */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background-color: #f5f7fa;
+  background-color: var(--color-bg-main);
+  color: var(--color-text-normal);
+  transition: background-color var(--theme-transition-duration) ease,
+    color var(--theme-transition-duration) ease;
 }
+
+/* Element UI Theme Styling */
 
 /* 卡片样式 */
 .el-card {
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  background-color: var(--color-bg-secondary);
+  border-color: var(--color-border);
+  color: var(--color-text-normal);
+}
+
+.el-card__header {
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-normal);
 }
 
 /* 按钮样式 */
 .el-button {
   border-radius: 4px;
   transition: all 0.3s;
+}
+
+.el-button--primary {
+  background-color: var(--color-button-primary);
+  border-color: var(--color-button-primary);
+}
+
+.el-button--primary:hover,
+.el-button--primary:focus {
+  background-color: var(--color-button-primary-hover);
+  border-color: var(--color-button-primary-hover);
+}
+
+.el-button--text {
+  color: var(--color-text-link);
 }
 
 .el-button:hover {
@@ -26,16 +62,166 @@ body {
   margin-bottom: 20px;
 }
 
-.el-input {
+.el-form-item__label {
+  color: var(--color-text-normal);
+}
+
+.el-input,
+.el-textarea {
   width: 100%;
+}
+
+.el-input__inner,
+.el-textarea__inner {
+  background-color: var(--color-input-bg);
+  border-color: var(--color-border);
+  color: var(--color-input-text);
+}
+
+.el-input__inner:focus,
+.el-textarea__inner:focus {
+  border-color: var(--color-primary);
+}
+
+/* 下拉菜单样式 */
+.el-dropdown-menu {
+  background-color: var(--color-bg-secondary);
+  border-color: var(--color-border);
+}
+
+.el-dropdown-menu__item {
+  color: var(--color-text-normal);
+}
+
+.el-dropdown-menu__item:hover {
+  background-color: var(--color-hover);
+  color: var(--color-text-normal);
+}
+
+/* 对话框样式 */
+.el-dialog {
+  background-color: var(--color-bg-main);
+  border-radius: 8px;
+}
+
+.el-dialog__title {
+  color: var(--color-text-normal);
+}
+
+.el-dialog__body {
+  color: var(--color-text-normal);
+}
+
+/* 弹出菜单 */
+.el-menu {
+  background-color: var(--color-bg-tertiary);
+  border-color: var(--color-border);
+}
+
+.el-menu-item {
+  color: var(--color-text-muted);
+}
+
+.el-menu-item:hover,
+.el-menu-item:focus {
+  background-color: var(--color-hover);
+}
+
+.el-menu-item.is-active {
+  color: var(--color-primary);
+}
+
+/* 标签页 */
+.el-tabs__item {
+  color: var(--color-text-muted);
+}
+
+.el-tabs__item.is-active {
+  color: var(--color-primary);
+}
+
+.el-tabs__active-bar {
+  background-color: var(--color-primary);
+}
+
+/* 抽屉 */
+.el-drawer {
+  background-color: var(--color-bg-main);
+  color: var(--color-text-normal);
+}
+
+.el-drawer__header {
+  color: var(--color-text-normal);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* 滑块 */
+.el-slider__bar {
+  background-color: var(--color-primary);
+}
+
+.el-slider__button {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
 }
 
 /* 链接样式 */
 a {
-  color: #409eff;
+  color: var(--color-text-link);
   text-decoration: none;
 }
 
 a:hover {
   text-decoration: underline;
+}
+
+/* 标签 */
+.el-tag {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-normal);
+  border-color: var(--color-border);
+}
+
+/* 表格 */
+.el-table {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-normal);
+}
+
+.el-table th {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-normal);
+}
+
+.el-table td {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.el-table--striped .el-table__body tr.el-table__row--striped td {
+  background-color: var(--color-bg-main);
+}
+
+/* Message 消息提示 */
+.el-message {
+  background-color: var(--color-bg-secondary);
+  border-color: var(--color-border);
+}
+
+.el-message__content {
+  color: var(--color-text-normal);
+}
+
+/* 日期选择器 */
+.el-date-picker {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-normal);
+}
+
+.el-date-table th,
+.el-date-table td {
+  color: var(--color-text-normal);
+}
+
+.el-date-table td.current:not(.disabled) .el-date-table-cell__text {
+  background-color: var(--color-primary);
 }

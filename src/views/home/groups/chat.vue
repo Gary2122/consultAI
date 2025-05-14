@@ -1,5 +1,8 @@
 <template>
-  <div class="group-chat-container" v-if="currentGroup">
+  <div
+    class="group-chat-container bg-theme-main text-theme-normal"
+    v-if="currentGroup"
+  >
     <!-- 聊天头部 -->
     <div class="chat-header">
       <div class="group-info">
@@ -95,6 +98,8 @@
                     !shouldShowSender(message, index) && !message.isSelf,
                   'self-message': message.isSelf,
                   'anonymous-message': message.isAnonymous,
+                  'message-theme-self': message.isSelf,
+                  'message-theme-other': !message.isSelf,
                 }"
               >
                 <!-- 匿名标记，仅显示在自己发送的匿名消息上 -->
@@ -156,7 +161,7 @@
     </div>
 
     <!-- 消息输入区 -->
-    <div class="chat-input">
+    <div class="chat-input bg-theme-secondary">
       <div class="input-options">
         <el-switch
           v-model="isAnonymous"
@@ -177,6 +182,7 @@
         placeholder="在这里输入消息..."
         resize="none"
         @keydown.enter.exact.prevent="sendMessage"
+        class="input-theme"
       />
       <div class="input-actions">
         <el-tooltip content="发送图片">
@@ -197,6 +203,7 @@
           type="primary"
           @click="sendMessage"
           :disabled="!inputMessage.trim()"
+          class="button-theme-primary"
         >
           发送
         </el-button>
@@ -222,6 +229,7 @@
       v-model="showGroupInfo"
       direction="rtl"
       size="350px"
+      class="bg-theme-main text-theme-normal"
     >
       <div class="group-drawer-content">
         <div class="group-header">
@@ -262,7 +270,7 @@
       </div>
     </el-drawer>
   </div>
-  <div v-else class="no-group-selected">
+  <div v-else class="no-group-selected bg-theme-main">
     <div class="placeholder-content">
       <i class="el-icon-chat-dot-square"></i>
       <p>请选择一个群组开始聊天</p>
@@ -609,8 +617,8 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #3c3f45;
-  background-color: #36393f;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-bg-main);
 
   .group-info {
     display: flex;
@@ -622,12 +630,12 @@ onMounted(async () => {
       .group-name {
         font-weight: 600;
         font-size: 16px;
-        color: #ffffff;
+        color: var(--color-text-normal);
       }
 
       .group-stats {
         font-size: 12px;
-        color: #b9bbbe;
+        color: var(--color-text-muted);
       }
     }
   }
@@ -637,7 +645,7 @@ onMounted(async () => {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  background-color: #36393f;
+  background-color: var(--color-bg-main);
 
   .loading-container {
     display: flex;
@@ -661,12 +669,12 @@ onMounted(async () => {
         font-size: 20px;
         font-weight: 600;
         margin-bottom: 8px;
-        color: #ffffff;
+        color: var(--color-text-normal);
       }
 
       .description {
         font-size: 14px;
-        color: #b9bbbe;
+        color: var(--color-text-muted);
       }
     }
   }
@@ -688,16 +696,16 @@ onMounted(async () => {
         top: 50%;
         width: 100%;
         height: 1px;
-        background-color: #3c3f45;
+        background-color: var(--color-border);
         z-index: 1;
       }
 
       span {
-        background-color: #36393f;
+        background-color: var(--color-bg-main);
         padding: 0 12px;
         position: relative;
         z-index: 2;
-        color: #b9bbbe;
+        color: var(--color-text-muted);
         font-size: 12px;
       }
     }
@@ -740,29 +748,29 @@ onMounted(async () => {
         .sender-name {
           margin-left: 8px;
           font-weight: 500;
-          color: #ffffff;
+          color: var(--color-text-normal);
         }
 
         .message-time {
           margin-left: 8px;
           font-size: 11px;
-          color: #72767d;
+          color: var(--color-text-muted);
         }
       }
 
       .message-content {
         padding: 8px 12px;
         border-radius: 4px;
-        background-color: #3c3f45;
-        color: #dcddde;
+        background-color: var(--color-message-other);
+        color: var(--color-text-normal);
         word-break: break-word;
         position: relative;
         margin-bottom: 2px;
 
         &.self-message {
-          background-color: #004fce;
+          background-color: var(--color-message-self);
           border-radius: 8px 0 8px 8px;
-          color: #ffffff;
+          color: white;
         }
 
         .text-content {
@@ -781,7 +789,7 @@ onMounted(async () => {
 
         .file-content {
           a {
-            color: #00aff4;
+            color: var(--color-text-link);
             text-decoration: none;
 
             &:hover {
@@ -848,8 +856,8 @@ onMounted(async () => {
 
 .chat-input {
   padding: 16px;
-  background-color: #36393f;
-  border-top: 1px solid #3c3f45;
+  background-color: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border);
 
   .input-options {
     display: flex;
@@ -861,24 +869,24 @@ onMounted(async () => {
     }
 
     .info-icon {
-      color: #b9bbbe;
+      color: var(--color-text-muted);
       font-size: 16px;
       cursor: pointer;
 
       &:hover {
-        color: #ffffff;
+        color: var(--color-text-normal);
       }
     }
   }
 
   :deep(.el-textarea__inner) {
-    background-color: #40444b;
+    background-color: var(--color-input-bg);
     border: none;
-    color: #dcddde;
+    color: var(--color-input-text);
     border-radius: 4px;
 
     &::placeholder {
-      color: #72767d;
+      color: var(--color-text-muted);
     }
   }
 
@@ -889,10 +897,10 @@ onMounted(async () => {
     margin-top: 8px;
 
     .el-button--text {
-      color: #b9bbbe;
+      color: var(--color-text-muted);
 
       &:hover {
-        color: #ffffff;
+        color: var(--color-text-normal);
       }
     }
   }
@@ -911,10 +919,11 @@ onMounted(async () => {
     h2 {
       margin: 16px 0 8px;
       font-size: 20px;
+      color: var(--color-text-normal);
     }
 
     p {
-      color: #8e9297;
+      color: var(--color-text-muted);
       margin: 0;
     }
   }
@@ -926,11 +935,13 @@ onMounted(async () => {
       font-size: 16px;
       margin-bottom: 12px;
       padding-bottom: 8px;
-      border-bottom: 1px solid #3c3f45;
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text-normal);
     }
 
     p {
       margin: 8px 0;
+      color: var(--color-text-normal);
     }
 
     .member-list {
@@ -945,12 +956,13 @@ onMounted(async () => {
         .member-name {
           margin-left: 8px;
           flex: 1;
+          color: var(--color-text-normal);
         }
 
         .member-role {
           font-size: 12px;
-          color: #8e9297;
-          background-color: #2f3136;
+          color: var(--color-text-muted);
+          background-color: var(--color-bg-tertiary);
           padding: 2px 6px;
           border-radius: 4px;
         }
@@ -970,11 +982,11 @@ onMounted(async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #36393f;
+  background-color: var(--color-bg-main);
 
   .placeholder-content {
     text-align: center;
-    color: #8e9297;
+    color: var(--color-text-muted);
 
     i {
       font-size: 64px;
