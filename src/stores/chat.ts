@@ -489,10 +489,18 @@ export const useChatStore = defineStore("chat", {
         // 确保保留匿名状态
         this.messages[chatId][index].isAnonymous = isAnonymous;
 
-        // 根据匿名状态设置消息显示信息
-        if (isAnonymous) {
-          this.messages[chatId][index].sender = "匿名用户";
-          this.messages[chatId][index].avatar = "";
+        // 确保sender是一个对象
+        if (typeof this.messages[chatId][index].sender === "string") {
+          const userStore = useUserStore();
+          this.messages[chatId][index].sender = {
+            _id: userStore.userId || "",
+            username: isAnonymous ? "匿名用户(我)" : userStore.username || "我",
+            avatar: isAnonymous ? "" : userStore.avatar || "",
+          };
+        } else if (isAnonymous) {
+          // 如果sender是对象且消息是匿名的，确保匿名设置正确
+          this.messages[chatId][index].sender.username = "匿名用户(我)";
+          this.messages[chatId][index].sender.avatar = "";
         }
 
         console.log(`重试消息: ${messageId}, 匿名状态: ${isAnonymous}`);

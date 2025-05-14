@@ -64,7 +64,7 @@
                 <template v-if="message.isAnonymous">
                   <el-avatar
                     :size="36"
-                    :icon="UserFilled"
+                    icon="el-icon-user"
                     class="anonymous-avatar"
                   />
                   <div class="sender-name anonymous-name">
@@ -279,7 +279,7 @@ import { useUserStore } from "@/stores/user";
 import { ElMessage } from "element-plus";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale/zh-CN";
-import { QuestionFilled, UserFilled } from "@element-plus/icons-vue";
+import { QuestionFilled } from "@element-plus/icons-vue";
 
 const route = useRoute();
 const groupStore = useGroupStore();
@@ -403,7 +403,6 @@ const retryMessage = async (message: any) => {
       content: message.content,
       contentType: message.messageType,
       fileUrl: message.fileUrl,
-      isAnonymous: message.isAnonymous,
     });
   } catch (error) {
     console.error("重试发送消息失败:", error);
