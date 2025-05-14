@@ -102,9 +102,11 @@ export const useGroupStore = defineStore("group", {
       this.loading = true;
       this.error = null;
       try {
-        const groups = await groupApi.getUserGroups();
-        this.groups = groups;
-        return groups;
+        if (this.groups.length === 0) {
+          const groups = await groupApi.getUserGroups();
+          this.groups = groups;
+        }
+        return this.groups;
       } catch (error: any) {
         this.error = error.response?.data?.message || "加载群组失败";
         throw error;
@@ -259,11 +261,13 @@ export const useGroupStore = defineStore("group", {
       content,
       contentType = "text",
       fileUrl = null,
+      isAnonymous = false,
     }: {
       groupId: string;
       content: string;
       contentType?: "text" | "image" | "file";
       fileUrl?: string | null;
+      isAnonymous?: boolean;
     }) {
       const chatStore = useChatStore();
       const userStore = useUserStore();
@@ -298,14 +302,15 @@ export const useGroupStore = defineStore("group", {
           createdAt: new Date().toISOString(),
           read: false,
           messageType: contentType,
-          sender: userStore.username || "我",
-          avatar: userStore.avatar || "/default-avatar.png",
+          sender: isAnonymous ? "匿名用户" : userStore.username || "我",
+          avatar: isAnonymous ? "" : userStore.avatar || "",
           fileUrl,
           isDeleted: false,
           updatedAt: new Date().toISOString(),
           isSelf: true,
           pending: true,
           isGroupMessage: true,
+          isAnonymous,
         };
 
         // 添加临时消息到聊天记录
@@ -316,7 +321,9 @@ export const useGroupStore = defineStore("group", {
           groupId,
           content,
           contentType,
-          fileUrl
+          fileUrl,
+          null,
+          isAnonymous
         );
 
         if (!result) {

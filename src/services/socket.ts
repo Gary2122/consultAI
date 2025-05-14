@@ -22,6 +22,7 @@ interface GroupMessage {
   contentType?: "text" | "image" | "file";
   fileUrl?: string | null;
   replyTo?: string | null;
+  isAnonymous?: boolean;
 }
 
 // 更新消息结构匹配后端接口
@@ -324,7 +325,8 @@ class SocketService {
     content: string,
     contentType: "text" | "image" | "file" = "text",
     fileUrl: string | null = null,
-    replyTo: string | null = null
+    replyTo: string | null = null,
+    isAnonymous: boolean = false
   ) {
     if (!this.socket || !this.isConnected.value) {
       console.error("Socket.IO未连接，无法发送群组消息");
@@ -338,6 +340,7 @@ class SocketService {
         groupId,
         content,
         contentType,
+        isAnonymous,
       };
 
       // 只在有值的情况下添加可选字段
@@ -446,6 +449,8 @@ class SocketService {
 
     // 判断是否为群组消息
     const isGroupMessage = message.recipientModel === "groups";
+    // 判断是否为匿名消息
+    const isAnonymous = !!message.isAnonymous;
 
     // 尝试适配不同的消息格式
     const messageData = {
@@ -470,9 +475,13 @@ class SocketService {
         : !!message.read,
       messageType: message.contentType || message.type || "text",
 
-      // 发送者信息
-      sender: message.sender?.username || message.senderName || "用户",
-      avatar: message.sender?.avatar || message.senderAvatar || "",
+      // 发送者信息 - 为匿名消息显示特殊名称
+      sender: isAnonymous
+        ? "匿名用户"
+        : message.sender?.username || message.senderName || "用户",
+      avatar: isAnonymous
+        ? ""
+        : message.sender?.avatar || message.senderAvatar || "",
 
       // 其他可选字段
       fileUrl: message.fileUrl,
@@ -483,6 +492,8 @@ class SocketService {
 
       // 群组消息标记
       isGroupMessage,
+      // 匿名消息标记
+      isAnonymous,
 
       // 特殊标记 - 确保在UI中能够识别这是一个新收到的消息
       isNewReceived: true,
@@ -565,6 +576,8 @@ class SocketService {
 
     // 判断是否为群组消息
     const isGroupMessage = message.recipientModel === "groups";
+    // 判断是否为匿名消息
+    const isAnonymous = !!message.isAnonymous;
 
     try {
       // 转换为本地消息格式
@@ -578,8 +591,13 @@ class SocketService {
           ? message.readBy.length > 0
           : !!message.read,
         messageType: message.contentType || message.type || "text",
-        sender: message.sender?.username || userStore.username || "我",
-        avatar: message.sender?.avatar || userStore.avatar || "",
+        // 根据匿名状态设置发送者信息
+        sender: isAnonymous
+          ? "匿名用户"
+          : message.sender?.username || userStore.username || "我",
+        avatar: isAnonymous
+          ? ""
+          : message.sender?.avatar || userStore.avatar || "",
         fileUrl: message.fileUrl,
         replyTo: message.replyTo,
         isDeleted: message.isDeleted || false,
@@ -587,11 +605,47 @@ class SocketService {
           message.updatedAt || message.createdAt || new Date().toISOString(),
         isSelf: true, // 是当前用户发送的消息
         isGroupMessage, // 群组消息标记
+        isAnonymous, // 匿名消息标记
       };
 
       console.log("发送成功，格式化后的消息:", messageData);
 
-      // 添加到聊天记录
+      // 确定聊天ID
+      let chatId;
+      if (isGroupMessage) {
+        chatId = message.recipient; // 群组ID
+      } else {
+        chatId = message.recipient; // 私聊接收者ID
+      }
+
+      // 在添加新消息前，查找并更新/删除对应的pending消息
+      if (chatStore.messages[chatId]) {
+        // 查找内容相同的pending消息
+        const pendingIndex = chatStore.messages[chatId].findIndex(
+          (msg) =>
+            msg.pending &&
+            msg.content === messageData.content &&
+            msg.senderId === messageData.senderId
+        );
+
+        if (pendingIndex !== -1) {
+          // 找到对应的pending消息，用新消息替换它
+          console.log(`替换原pending消息，索引: ${pendingIndex}`);
+
+          // 确保匿名状态与原pending消息一致
+          const pendingMsg = chatStore.messages[chatId][pendingIndex];
+          if (pendingMsg.isAnonymous && !messageData.isAnonymous) {
+            console.log("修正匿名状态: 后端未返回匿名标记，但原消息是匿名的");
+            messageData.isAnonymous = true;
+            messageData.sender = "匿名用户";
+            messageData.avatar = "";
+          }
+
+          chatStore.messages[chatId].splice(pendingIndex, 1);
+        }
+      }
+
+      // 添加确认的消息到聊天记录
       chatStore.addMessage(messageData);
     } catch (error) {
       console.error("处理发送成功消息时出错:", error);

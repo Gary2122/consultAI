@@ -36,7 +36,7 @@
         </div>
         <div v-else class="message-list">
           <div
-            v-for="(message, index) in messages"
+            v-for="(message, index) in filterDuplicateMessages(messages)"
             :key="message._id"
             :class="[
               'message-item',
@@ -61,22 +61,52 @@
                 v-if="shouldShowSender(message, index) && !message.isSelf"
                 class="sender-info"
               >
-                <el-avatar :size="36" :src="message.avatar || defaultAvatar" />
-                <div class="sender-name">{{ message.sender }}</div>
+                <template v-if="message.isAnonymous">
+                  <el-avatar
+                    :size="36"
+                    :icon="UserFilled"
+                    class="anonymous-avatar"
+                  />
+                  <div class="sender-name anonymous-name">
+                    {{ message.sender }}
+                    <el-tooltip content="匿名消息" placement="top">
+                      <el-tag size="small" effect="dark" class="anonymous-tag"
+                        >匿名</el-tag
+                      >
+                    </el-tooltip>
+                  </div>
+                </template>
+                <template v-else>
+                  <el-avatar
+                    :size="36"
+                    :src="message.avatar || defaultAvatar"
+                  />
+                  <div class="sender-name">{{ message.sender }}</div>
+                </template>
                 <div class="message-time">
                   {{ formatTime(message.createdAt) }}
                 </div>
               </div>
 
-              <!-- 消息内容 -->
               <div
                 class="message-content"
                 :class="{
                   'no-sender':
                     !shouldShowSender(message, index) && !message.isSelf,
                   'self-message': message.isSelf,
+                  'anonymous-message': message.isAnonymous,
                 }"
               >
+                <!-- 匿名标记，仅显示在自己发送的匿名消息上 -->
+                <div
+                  v-if="message.isSelf && message.isAnonymous"
+                  class="anonymous-indicator"
+                >
+                  <el-tag size="small" effect="dark" class="anonymous-tag"
+                    >匿名</el-tag
+                  >
+                </div>
+
                 <div v-if="message.messageType === 'text'" class="text-content">
                   {{ message.content }}
                 </div>
@@ -97,7 +127,6 @@
                   </a>
                 </div>
 
-                <!-- 发送状态 -->
                 <div v-if="message.pending" class="status-icon pending">
                   <i class="el-icon-loading"></i>
                 </div>
@@ -105,7 +134,6 @@
                   <i class="el-icon-warning-outline"></i>
                 </div>
 
-                <!-- 自己发送的消息时间显示在右下角 -->
                 <div v-if="message.isSelf" class="self-message-time">
                   {{ formatTime(message.createdAt) }}
                 </div>
@@ -129,6 +157,19 @@
 
     <!-- 消息输入区 -->
     <div class="chat-input">
+      <div class="input-options">
+        <el-switch
+          v-model="isAnonymous"
+          active-text="匿名聊天"
+          inactive-text="实名聊天"
+          class="anonymous-switch"
+        />
+        <el-tooltip
+          content="匿名消息不会显示您的用户名和头像，但群组管理员可以查看发送者信息"
+        >
+          <el-icon class="info-icon"><question-filled /></el-icon>
+        </el-tooltip>
+      </div>
       <el-input
         v-model="inputMessage"
         type="textarea"
@@ -237,7 +278,8 @@ import { useChatStore } from "@/stores/chat";
 import { useUserStore } from "@/stores/user";
 import { ElMessage } from "element-plus";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
-import zhCN from "date-fns/locale/zh-CN";
+import { zhCN } from "date-fns/locale/zh-CN";
+import { QuestionFilled, UserFilled } from "@element-plus/icons-vue";
 
 const route = useRoute();
 const groupStore = useGroupStore();
@@ -253,6 +295,7 @@ const showGroupInfo = ref(false);
 const imageInput = ref<HTMLInputElement | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const defaultAvatar = "/default-avatar.png";
+const isAnonymous = ref(false);
 
 // 获取路由参数中的群组ID
 const groupId = computed(() => route.params.id as string);
@@ -308,7 +351,7 @@ const loadGroupMessages = async (id: string) => {
     await groupStore.loadGroupMessages(id);
 
     // 输出消息数量
-    console.log("群组消息加载完成，消息数量:", messages.value.length);
+    console.log("群组消息加载完成，消息数量:", messages.value);
 
     // 滚动到最新消息
     await nextTick();
@@ -330,6 +373,7 @@ const sendMessage = async () => {
       groupId: groupId.value,
       content: inputMessage.value.trim(),
       contentType: "text",
+      isAnonymous: isAnonymous.value,
     });
 
     // 清空输入框
@@ -359,6 +403,7 @@ const retryMessage = async (message: any) => {
       content: message.content,
       contentType: message.messageType,
       fileUrl: message.fileUrl,
+      isAnonymous: message.isAnonymous,
     });
   } catch (error) {
     console.error("重试发送消息失败:", error);
@@ -489,6 +534,55 @@ const getMemberRoleText = (role: string) => {
     default:
       return "成员";
   }
+};
+
+// 添加新的函数来过滤重复消息
+const filterDuplicateMessages = (messages: any[]) => {
+  const filteredMessages: any[] = [];
+  const messageIds = new Set();
+  const pendingMessages = new Map();
+
+  // 先确认哪些消息是pending状态
+  messages.forEach((msg) => {
+    if (msg.pending) {
+      // 用内容作为key，因为pending消息还没有确定的ID
+      pendingMessages.set(msg.content, msg);
+    }
+  });
+
+  // 过滤消息
+  messages.forEach((msg) => {
+    // 如果消息ID已添加过，则跳过
+    if (messageIds.has(msg._id)) {
+      return;
+    }
+
+    // 如果这个消息不是pending状态，但内容匹配一个pending消息
+    // 且这两个消息是同一个人在同一时间段内发送的，则跳过pending消息
+    if (!msg.pending && pendingMessages.has(msg.content)) {
+      const pendingMsg = pendingMessages.get(msg.content);
+
+      // 如果该消息内容已经有了非pending状态的消息，跳过pending消息
+      if (pendingMsg.senderId === msg.senderId) {
+        // 从待处理消息Map中移除这个消息，表示它已经有了非pending的对应消息
+        pendingMessages.delete(msg.content);
+      }
+    }
+
+    // 添加消息ID到已处理集合
+    messageIds.add(msg._id);
+
+    // 添加消息到结果数组
+    filteredMessages.push(msg);
+  });
+
+  // 移除那些与非pending消息重复的pending消息
+  return filteredMessages.filter((msg) => {
+    if (msg.pending && !pendingMessages.has(msg.content)) {
+      return false; // 这个pending消息已经有非pending版本了，丢弃
+    }
+    return true;
+  });
 };
 
 // 组件挂载时初始化
@@ -666,12 +760,8 @@ onMounted(async () => {
         position: relative;
         margin-bottom: 2px;
 
-        &.no-sender {
-          margin-left: 44px;
-        }
-
         &.self-message {
-          background-color: #4f545c;
+          background-color: #004fce;
           border-radius: 8px 0 8px 8px;
           color: #ffffff;
         }
@@ -723,6 +813,24 @@ onMounted(async () => {
           right: 8px;
           bottom: 4px;
         }
+
+        &.anonymous-message {
+          background-color: #363636;
+        }
+
+        .anonymous-indicator {
+          margin-bottom: 4px;
+          display: flex;
+          justify-content: flex-end;
+
+          .anonymous-tag {
+            background-color: #606266;
+            font-size: 10px;
+            padding: 0 4px;
+            height: 16px;
+            line-height: 16px;
+          }
+        }
       }
 
       .retry-button {
@@ -743,6 +851,26 @@ onMounted(async () => {
   padding: 16px;
   background-color: #36393f;
   border-top: 1px solid #3c3f45;
+
+  .input-options {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+
+    .anonymous-switch {
+      margin-right: 8px;
+    }
+
+    .info-icon {
+      color: #b9bbbe;
+      font-size: 16px;
+      cursor: pointer;
+
+      &:hover {
+        color: #ffffff;
+      }
+    }
+  }
 
   :deep(.el-textarea__inner) {
     background-color: #40444b;
@@ -857,6 +985,25 @@ onMounted(async () => {
     p {
       font-size: 16px;
     }
+  }
+}
+
+.anonymous-avatar {
+  background-color: #909399;
+  color: #ffffff;
+}
+
+.anonymous-name {
+  display: flex;
+  align-items: center;
+
+  .anonymous-tag {
+    margin-left: 4px;
+    background-color: #606266;
+    font-size: 10px;
+    padding: 0 4px;
+    height: 16px;
+    line-height: 16px;
   }
 }
 </style>

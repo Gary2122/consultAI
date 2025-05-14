@@ -28,6 +28,7 @@ export interface Message {
   isNewReceived?: boolean;
   isGroupMessage?: boolean; // 是否为群组消息
   forceRender?: boolean; // 强制渲染标记
+  isAnonymous?: boolean; // 是否为匿名消息
 }
 
 // 后端消息结构
@@ -52,6 +53,7 @@ export interface BackendMessage {
   replyTo: string | null;
   createdAt: string;
   updatedAt: string;
+  isAnonymous?: boolean;
 }
 
 export interface ChatState {
@@ -153,43 +155,72 @@ export const useChatStore = defineStore("chat", {
         this.messages[chatId] = [];
       }
 
-      // 检查消息是否已存在
-      const existingIndex = this.messages[chatId].findIndex(
+      // 检查消息是否已存在 (通过ID)
+      const existingMsgById = this.messages[chatId].findIndex(
         (msg) => msg._id === message._id
       );
 
-      if (existingIndex === -1) {
-        this.messages[chatId].push(message);
+      // 检查是否存在相同内容的pending消息
+      const existingPendingMsgIndex = this.messages[chatId].findIndex(
+        (msg) =>
+          msg.pending &&
+          msg.content === message.content &&
+          msg.senderId === message.senderId &&
+          !message.pending // 只有当新消息不是pending状态时才匹配
+      );
 
-        // 按时间排序
-        this.messages[chatId].sort((a, b) => {
-          return (
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      // 如果找到了相同内容的pending消息，且当前消息不是pending状态，则替换该消息
+      if (existingPendingMsgIndex !== -1 && !message.pending) {
+        const pendingMsg = this.messages[chatId][existingPendingMsgIndex];
+        console.log("替换pending消息:", pendingMsg, "->", message);
+
+        // 确保匿名状态一致 - 如果pending消息是匿名的，但新消息没有匿名标记，保持匿名状态
+        if (pendingMsg.isAnonymous && !message.isAnonymous) {
+          console.log(
+            "保持匿名状态: pending消息是匿名的，但新消息没有匿名标记"
           );
-        });
+          message.isAnonymous = true;
+          message.sender = "匿名用户";
+          message.avatar = "";
+        }
 
-        // 如果不是当前聊天，增加未读计数
-        if (
-          chatId !== this.currentChatId &&
-          message.senderId !== useUserStore().userId
-        ) {
-          this.unreadCounts[chatId] = (this.unreadCounts[chatId] || 0) + 1;
-        }
-        console.log("添加新消息", chatId, message.content);
-      } else {
-        // 如果消息已存在但状态发生变化，更新状态
-        const existingMessage = this.messages[chatId][existingIndex];
-        if (
-          existingMessage.pending !== message.pending ||
-          existingMessage.failed !== message.failed
-        ) {
-          this.messages[chatId][existingIndex] = {
-            ...existingMessage,
-            pending: message.pending,
-            failed: message.failed,
-          };
-        }
+        this.messages[chatId].splice(existingPendingMsgIndex, 1);
+        // 不存在消息ID直接添加，会在下面添加
       }
+      // 如果相同ID的消息已存在，更新它
+      else if (existingMsgById !== -1) {
+        // 更新现有消息，保留部分客户端状态
+        const existingMsg = this.messages[chatId][existingMsgById];
+        // 如果现有消息是pending状态，但新消息不是，则更新状态
+        if (existingMsg.pending && !message.pending) {
+          this.messages[chatId][existingMsgById] = {
+            ...message,
+            pending: false,
+            failed: false,
+          };
+          console.log("更新消息状态:", existingMsg._id);
+        }
+        return; // 已处理，退出
+      }
+
+      // 消息不存在，添加新消息
+      this.messages[chatId].push(message);
+
+      // 按时间排序
+      this.messages[chatId].sort((a, b) => {
+        return (
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      });
+
+      // 如果不是当前聊天，增加未读计数
+      if (
+        chatId !== this.currentChatId &&
+        message.senderId !== useUserStore().userId
+      ) {
+        this.unreadCounts[chatId] = (this.unreadCounts[chatId] || 0) + 1;
+      }
+      console.log("添加新消息", chatId, message.content);
     },
 
     // 更新消息
@@ -239,6 +270,7 @@ export const useChatStore = defineStore("chat", {
       const userStore = useUserStore();
       const isCurrentUser = backendMessage.sender._id === userStore.userId;
       const isGroupMessage = backendMessage.recipientModel === "groups";
+      const isAnonymous = !!backendMessage.isAnonymous;
 
       return {
         _id: backendMessage._id,
@@ -248,8 +280,8 @@ export const useChatStore = defineStore("chat", {
         createdAt: backendMessage.createdAt,
         read: backendMessage.readBy.length > 0,
         messageType: backendMessage.contentType,
-        sender: backendMessage.sender.username,
-        avatar: backendMessage.sender.avatar,
+        sender: isAnonymous ? "匿名用户" : backendMessage.sender.username,
+        avatar: isAnonymous ? "" : backendMessage.sender.avatar,
         fileUrl: backendMessage.fileUrl,
         replyTo: backendMessage.replyTo,
         isDeleted: backendMessage.isDeleted,
@@ -257,6 +289,7 @@ export const useChatStore = defineStore("chat", {
         isSelf: isCurrentUser,
         isNewReceived: false,
         isGroupMessage: isGroupMessage, // 标记是否为群组消息
+        isAnonymous: isAnonymous, // 匿名消息标记
       };
     },
 
@@ -446,8 +479,23 @@ export const useChatStore = defineStore("chat", {
       );
 
       if (index !== -1) {
+        // 保存消息的匿名状态
+        const isAnonymous = this.messages[chatId][index].isAnonymous || false;
+
+        // 更新消息状态
         this.messages[chatId][index].pending = true;
         this.messages[chatId][index].failed = false;
+
+        // 确保保留匿名状态
+        this.messages[chatId][index].isAnonymous = isAnonymous;
+
+        // 根据匿名状态设置消息显示信息
+        if (isAnonymous) {
+          this.messages[chatId][index].sender = "匿名用户";
+          this.messages[chatId][index].avatar = "";
+        }
+
+        console.log(`重试消息: ${messageId}, 匿名状态: ${isAnonymous}`);
       }
     },
 
