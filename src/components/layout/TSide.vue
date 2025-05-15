@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-13 20:44:12
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-08 15:30:08
+ * @LastEditTime: 2025-05-15 12:31:27
 -->
 <style lang="scss" scoped>
 .TSide {
@@ -148,17 +148,17 @@
       </el-tooltip>
     </router-link>
     <!-- 添加服务器/群组按钮 -->
-    <div class="server-icon">
+    <!-- <div class="server-icon">
       <el-tooltip content="添加服务器" placement="right">
         <i class="el-icon-plus"></i>
       </el-tooltip>
-    </div>
+    </div> -->
     <!-- 发现更多 -->
-    <div class="server-icon">
+    <!-- <div class="server-icon">
       <el-tooltip content="发现" placement="right">
         <i class="el-icon-discover"></i>
       </el-tooltip>
-    </div>
+    </div> -->
 
     <!-- 设置按钮 (底部) -->
     <div class="user-settings">
