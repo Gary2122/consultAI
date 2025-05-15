@@ -139,10 +139,10 @@ const searchUsers = async () => {
 
     // 加载好友列表以比较状态
     const friendsResponse = await getFriendsList();
-    const friendsList = friendsResponse.data.data || [];
+    const friendsList = friendsResponse.data || [];
 
     // 处理数据，标记用户状态
-    searchResults.value = response.data.data.map((user: User) => {
+    searchResults.value = response.data.map((user: User) => {
       // 检查是否已经是好友
       const isFriend = friendsList.some(
         (friend: any) => friend._id === user._id

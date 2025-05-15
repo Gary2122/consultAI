@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-05-09 11:52:12
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-09 12:49:34
+ * @LastEditTime: 2025-05-15 12:36:24
 -->
 <template>
   <div class="friend-requests-panel">
@@ -33,17 +33,17 @@
       <div v-else class="request-list">
         <div
           v-for="request in pendingRequests"
-          :key="request.id"
+          :key="request._id"
           class="request-item"
         >
           <div class="request-avatar">
-            <el-avatar :size="50" :src="request.sender.avatar">
-              {{ request.sender.username.substring(0, 1).toUpperCase() }}
+            <el-avatar :size="50" :src="request.requester.avatar">
+              {{ request.requester.username.substring(0, 1).toUpperCase() }}
             </el-avatar>
           </div>
 
           <div class="request-info">
-            <div class="request-name">{{ request.sender.username }}</div>
+            <div class="request-name">{{ request.requester.username }}</div>
             <div class="request-time">
               请求时间: {{ formatTime(request.createdAt) }}
             </div>
@@ -53,14 +53,14 @@
             <el-button
               type="success"
               size="small"
-              @click="confirmFriendRequest(request.id)"
+              @click="confirmFriendRequest(request._id)"
               :loading="request.loading"
               >接受</el-button
             >
             <el-button
               type="danger"
               size="small"
-              @click="rejectFriendRequest(request.id)"
+              @click="rejectFriendRequest(request._id)"
               :loading="request.loading"
               >拒绝</el-button
             >
@@ -91,8 +91,8 @@ interface User {
 }
 
 interface FriendRequest {
-  id: number | string;
-  sender: User;
+  _id: number | string;
+  requester: User;
   receiver: User;
   status: "pending" | "accepted" | "rejected";
   createdAt: string | Date;
@@ -112,6 +112,7 @@ onMounted(() => {
 const loadFriendReqs = async () => {
   loadingRequests.value = true;
   pendingRequests.value = await loadFriendRequests();
+  console.log(pendingRequests.value);
   loadingRequests.value = false;
 };
 
@@ -119,7 +120,7 @@ const loadFriendReqs = async () => {
 const confirmFriendRequest = async (requestId: number | string) => {
   try {
     const requestIndex = pendingRequests.value.findIndex(
-      (req) => req.id === requestId
+      (req) => req._id === requestId
     );
     if (requestIndex !== -1) {
       pendingRequests.value[requestIndex].loading = true;
@@ -127,12 +128,12 @@ const confirmFriendRequest = async (requestId: number | string) => {
     await acceptRequest(requestId);
     // 从列表中移除已处理的请求
     pendingRequests.value = pendingRequests.value.filter(
-      (req) => req.id !== requestId
+      (req) => req._id !== requestId
     );
   } catch (error) {
     // 重置加载状态
     const requestIndex = pendingRequests.value.findIndex(
-      (req) => req.id === requestId
+      (req) => req._id === requestId
     );
     if (requestIndex !== -1) {
       pendingRequests.value[requestIndex].loading = false;
@@ -145,7 +146,7 @@ const rejectFriendRequest = async (requestId: number | string) => {
   try {
     // 找到请求并设置加载状态
     const requestIndex = pendingRequests.value.findIndex(
-      (req) => req.id === requestId
+      (req) => req._id === requestId
     );
     if (requestIndex !== -1) {
       pendingRequests.value[requestIndex].loading = true;
@@ -155,12 +156,12 @@ const rejectFriendRequest = async (requestId: number | string) => {
 
     // 从列表中移除已处理的请求
     pendingRequests.value = pendingRequests.value.filter(
-      (req) => req.id !== requestId
+      (req) => req._id !== requestId
     );
   } catch (error) {
     // 重置加载状态
     const requestIndex = pendingRequests.value.findIndex(
-      (req) => req.id === requestId
+      (req) => req._id === requestId
     );
     if (requestIndex !== -1) {
       pendingRequests.value[requestIndex].loading = false;

@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-05-07 21:23:45
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-12 19:30:42
+ * @LastEditTime: 2025-05-15 12:26:04
  */
 // 搜索用户（根据用户名或者用户邮箱）
 import { isEmpty } from "@/utils/common";
@@ -51,16 +51,12 @@ export const loadFriendRequests = async () => {
   try {
     const response = await getFriendRequests();
     console.log(response.data);
-    if (
-      isEmpty(response.data) ||
-      isEmpty(response.data.success) ||
-      isEmpty(response.data.data)
-    ) {
+    if (isEmpty(response.data) || isEmpty(response.success)) {
       console.error("获取好友请求失败:", response.data);
       ElMessage.warning("获取好友请求失败");
       return [];
     }
-    return response.data.data.incoming;
+    return response.data.incoming;
   } catch (error) {
     console.error("获取好友请求失败:", error);
     ElMessage.error("获取好友请求失败，请重试");
@@ -72,7 +68,7 @@ export const loadFriendRequests = async () => {
 export const acceptRequest = async (requestId: number | string) => {
   try {
     const response = await acceptFriendRequest(requestId);
-    if (isEmpty(response.data) || isEmpty(response.data.success)) {
+    if (isEmpty(response.data) || isEmpty(response.success)) {
       ElMessage.warning("接受好友请求数据返回错误");
       return;
     }
