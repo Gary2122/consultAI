@@ -4,12 +4,12 @@
  * @Author: Garrison
  * @Date: 2025-04-13 20:44:12
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-15 12:31:27
+ * @LastEditTime: 2025-05-15 12:47:36
 -->
 <style lang="scss" scoped>
 .TSide {
   height: calc(100vh - 98px);
-  background-color: #202225;
+  background-color: var(--color-bg-tside);
   color: #dcddde;
   transition: background-color 0.3s, color 0.3s;
   border-top-left-radius: 16px;
@@ -22,7 +22,7 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background-color: #36393f;
+    background-color: var(--color-text-muted);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -32,13 +32,13 @@
     position: relative;
 
     &:hover {
-      background-color: #5865f2;
+      background-color: var(--color-bg-tside-hover);
       border-radius: 16px;
       text-decoration: none;
     }
 
     &.active {
-      background-color: #5865f2;
+      background-color: var(--color-bg-tside-active);
       border-radius: 16px;
 
       &::before {
@@ -48,7 +48,7 @@
         width: 4px;
         height: 32px;
         border-radius: 0 4px 4px 0;
-        background-color: white;
+        background-color: var(--color-text-normal);
       }
     }
 

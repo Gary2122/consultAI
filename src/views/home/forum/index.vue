@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-29 15:28:06
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-13 19:58:16
+ * @LastEditTime: 2025-05-15 12:53:27
 -->
 <template>
   <div class="forum-container">
@@ -843,8 +843,8 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 .forum-container {
-  background-color: #36393f;
-  color: #dcddde;
+  background-color: var(--color-bg-main);
+  color: var(--color-text-normal);
   height: 100%;
   padding: 20px;
   margin: 0 auto;
@@ -861,19 +861,19 @@ onBeforeUnmount(() => {
     i {
       font-size: 24px;
       margin-right: 12px;
-      color: #5865f2;
+      color: var(--color-primary-light);
     }
 
     h1 {
       margin: 0;
       font-size: 24px;
       font-weight: 700;
-      color: white;
+      color: var(--color-text-normal);
     }
   }
 
   .header-desc {
-    color: #b9bbbe;
+    color: var(--color-text-muted);
     margin: 8px 0 20px;
     font-size: 14px;
   }
@@ -904,7 +904,7 @@ onBeforeUnmount(() => {
 }
 
 .create-post-container {
-  background-color: #2f3136;
+  background-color: var(--color-bg-main);
   border-radius: 5px;
   padding: 16px;
   margin-bottom: 24px;
@@ -918,8 +918,8 @@ onBeforeUnmount(() => {
       position: absolute;
       bottom: -5px;
       right: -5px;
-      background-color: #5865f2;
-      color: white;
+      background-color: var(--color-primary-light);
+      color: var(--color-text-normal);
       font-size: 10px;
       padding: 2px 5px;
       border-radius: 10px;
@@ -930,28 +930,28 @@ onBeforeUnmount(() => {
     flex: 1;
 
     .create-post-placeholder {
-      background-color: #40444b;
+      background-color: var(--color-bg-main);
       border-radius: 4px;
       padding: 10px 16px;
-      color: #72767d;
+      color: var(--color-text-muted);
       cursor: pointer;
       min-height: 42px;
       display: flex;
       align-items: center;
 
       &:hover {
-        background-color: #4f545c;
+        background-color: var(--color-bg-main);
       }
     }
 
     .post-editor {
       :deep(.el-textarea__inner) {
-        background-color: #40444b;
+        background-color: var(--color-bg-main);
         border: none;
-        color: white;
+        color: var(--color-text-normal);
 
         &::placeholder {
-          color: #72767d;
+          color: var(--color-text-muted);
         }
 
         &:focus {
@@ -985,14 +985,14 @@ onBeforeUnmount(() => {
 
 .posts-container {
   .loading-state {
-    background-color: #2f3136;
+    background-color: var(--color-bg-main);
     border-radius: 5px;
     padding: 16px;
     margin-bottom: 16px;
   }
 
   .post-card {
-    background-color: #2f3136;
+    background-color: var(--color-bg-main);
     border-radius: 5px;
     padding: 16px;
     margin-bottom: 16px;
@@ -1011,12 +1011,12 @@ onBeforeUnmount(() => {
 
           .author-name {
             display: block;
-            color: white;
+            color: var(--color-text-normal);
             font-weight: 500;
           }
 
           .post-time {
-            color: #b9bbbe;
+            color: var(--color-text-muted);
             font-size: 12px;
           }
         }
@@ -1024,13 +1024,13 @@ onBeforeUnmount(() => {
 
       .post-menu {
         cursor: pointer;
-        color: #b9bbbe;
+        color: var(--color-text-muted);
 
         i {
           font-size: 20px;
 
           &:hover {
-            color: white;
+            color: var(--color-text-normal);
           }
         }
       }
@@ -1038,7 +1038,7 @@ onBeforeUnmount(() => {
 
     .post-content {
       margin-bottom: 16px;
-      color: white;
+      color: var(--color-text-normal);
       line-height: 1.5;
       white-space: pre-wrap;
       word-break: break-word;
@@ -1053,8 +1053,8 @@ onBeforeUnmount(() => {
 
     .post-actions {
       display: flex;
-      border-top: 1px solid #40444b;
-      border-bottom: 1px solid #40444b;
+      border-top: 1px solid var(--color-border-main);
+      border-bottom: 1px solid var(--color-border-main);
       padding: 10px 0;
       margin-bottom: 16px;
 
@@ -1062,7 +1062,7 @@ onBeforeUnmount(() => {
         display: flex;
         align-items: center;
         cursor: pointer;
-        color: #b9bbbe;
+        color: var(--color-text-muted);
         margin-right: 24px;
 
         i {
@@ -1072,7 +1072,7 @@ onBeforeUnmount(() => {
 
         &:hover,
         &.active {
-          color: #5865f2;
+          color: var(--color-primary-light);
         }
       }
     }
@@ -1101,12 +1101,12 @@ onBeforeUnmount(() => {
 
               .comment-author {
                 font-weight: 500;
-                color: white;
+                color: var(--color-text-normal);
                 margin-right: 8px;
               }
 
               .comment-time {
-                color: #b9bbbe;
+                color: var(--color-text-muted);
                 font-size: 12px;
               }
             }
@@ -1125,7 +1125,7 @@ onBeforeUnmount(() => {
                 display: flex;
                 align-items: center;
                 cursor: pointer;
-                color: #b9bbbe;
+                color: var(--color-text-muted);
                 font-size: 12px;
                 margin-right: 16px;
 
@@ -1133,12 +1133,12 @@ onBeforeUnmount(() => {
                   margin-right: 4px;
 
                   &.active {
-                    color: #5865f2;
+                    color: var(--color-primary-light);
                   }
                 }
 
                 &:hover {
-                  color: white;
+                  color: var(--color-text-normal);
                 }
               }
             }
@@ -1163,13 +1163,13 @@ onBeforeUnmount(() => {
 
                     .reply-author {
                       font-weight: 500;
-                      color: white;
+                      color: var(--color-text-normal);
                       margin-right: 8px;
                       font-size: 12px;
                     }
 
                     .reply-time {
-                      color: #b9bbbe;
+                      color: var(--color-text-muted);
                       font-size: 11px;
                     }
                   }
@@ -1180,7 +1180,7 @@ onBeforeUnmount(() => {
                     margin-bottom: 4px;
 
                     .reply-to {
-                      color: #5865f2;
+                      color: var(--color-primary-light);
                     }
                   }
 
@@ -1193,7 +1193,7 @@ onBeforeUnmount(() => {
                       display: flex;
                       align-items: center;
                       cursor: pointer;
-                      color: #b9bbbe;
+                      color: var(--color-text-muted);
                       font-size: 11px;
                       margin-right: 12px;
 
@@ -1202,12 +1202,12 @@ onBeforeUnmount(() => {
                         font-size: 11px;
 
                         &.active {
-                          color: #5865f2;
+                          color: var(--color-primary-light);
                         }
                       }
 
                       &:hover {
-                        color: white;
+                        color: var(--color-text-normal);
                       }
                     }
                   }
@@ -1223,7 +1223,7 @@ onBeforeUnmount(() => {
         flex-direction: column;
         align-items: center;
         padding: 20px;
-        color: #72767d;
+        color: var(--color-text-muted);
 
         i {
           font-size: 24px;
@@ -1243,12 +1243,12 @@ onBeforeUnmount(() => {
           flex: 1;
 
           :deep(.el-input__inner) {
-            background-color: #40444b;
+            background-color: var(--color-bg-main);
             border: none;
-            color: white;
+            color: var(--color-text-normal);
 
             &::placeholder {
-              color: #72767d;
+              color: var(--color-text-muted);
             }
           }
 
@@ -1259,7 +1259,7 @@ onBeforeUnmount(() => {
 
             :deep(.el-checkbox__label) {
               font-size: 12px;
-              color: #b9bbbe;
+              color: var(--color-text-muted);
             }
           }
         }
@@ -1272,7 +1272,7 @@ onBeforeUnmount(() => {
     margin: 20px 0;
 
     :deep(.el-button) {
-      color: #5865f2;
+      color: var(--color-primary-light);
     }
   }
 
@@ -1285,42 +1285,42 @@ onBeforeUnmount(() => {
 
     i {
       font-size: 48px;
-      color: #72767d;
+      color: var(--color-text-muted);
       margin-bottom: 20px;
     }
 
     p {
-      color: #b9bbbe;
+      color: var(--color-text-muted);
       margin-bottom: 20px;
     }
   }
 }
 
 :deep(.el-button--primary) {
-  background-color: #5865f2;
-  border-color: #5865f2;
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary-light);
 
   &:hover,
   &:focus {
-    background-color: #4752c4;
-    border-color: #4752c4;
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary-light);
   }
 }
 
 :deep(.el-radio-button__inner) {
-  background-color: #2f3136;
-  color: #b9bbbe;
-  border-color: #4f545c;
+  background-color: var(--color-bg-main);
+  color: var(--color-text-muted);
+  border-color: var(--color-border-main);
 
   &:hover {
-    color: white;
+    color: var(--color-text-normal);
   }
 }
 
 :deep(.el-radio-button__orig-radio:checked + .el-radio-button__inner) {
-  background-color: #5865f2;
-  border-color: #5865f2;
-  box-shadow: -1px 0 0 0 #5865f2;
-  color: white;
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary-light);
+  box-shadow: -1px 0 0 0 var(--color-primary-light);
+  color: var(--color-text-normal);
 }
 </style>

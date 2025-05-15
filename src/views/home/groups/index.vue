@@ -121,36 +121,36 @@ onMounted(() => {
 
 .groups-left {
   width: 250px;
-  background-color: #2f3136;
-  color: #dcddde;
+  background-color: var(--color-bg-main);
+  color: var(--color-text-normal);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #202225;
+  border-right: 1px solid var(--color-border-main);
   overflow: hidden;
 
   .create-group {
     padding: 10px;
     display: flex;
     justify-content: center;
-    border-bottom: 1px solid #202225;
+    border-bottom: 1px solid var(--color-border-main);
   }
 
   .search-box {
     padding: 16px 10px;
 
     :deep(.el-input__inner) {
-      background-color: #202225;
+      background-color: var(--color-bg-main);
       border: none;
-      color: #dcddde;
+      color: var(--color-text-normal);
       border-radius: 4px;
 
       &::placeholder {
-        color: #72767d;
+        color: var(--color-text-muted);
       }
     }
 
     :deep(.el-input__prefix) {
-      color: #72767d;
+      color: var(--color-text-muted);
     }
   }
 
@@ -220,7 +220,7 @@ onMounted(() => {
 
 .groups-right {
   flex: 1;
-  background-color: #36393f;
+  background-color: var(--color-bg-main);
   display: flex;
   flex-direction: column;
 }

@@ -191,20 +191,20 @@ const formatTime = (time: string | Date) => {
 .notice-container {
   display: flex;
   height: 100vh;
-  background-color: #36393f;
-  color: #dcddde;
+  background-color: var(--color-bg-main);
+  color: var(--color-text-normal);
 }
 
 // 左侧好友请求面板
 .friend-requests-panel {
   width: 30%;
-  border-right: 1px solid #202225;
+  border-right: 1px solid var(--color-border-main);
   display: flex;
   flex-direction: column;
 
   .panel-header {
     padding: 16px;
-    border-bottom: 1px solid #202225;
+    border-bottom: 1px solid var(--color-border-main);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -212,7 +212,7 @@ const formatTime = (time: string | Date) => {
     h2 {
       margin: 0;
       font-size: 16px;
-      color: #ffffff;
+      color: var(--color-text-normal);
     }
   }
 
@@ -229,7 +229,7 @@ const formatTime = (time: string | Date) => {
   }
 
   .request-item {
-    background-color: #2f3136;
+    background-color: var(--color-bg-main);
     border-radius: 5px;
     padding: 16px;
     display: flex;
@@ -244,14 +244,14 @@ const formatTime = (time: string | Date) => {
       flex: 1;
 
       .request-name {
-        color: #ffffff;
+        color: var(--color-text-normal);
         font-weight: 500;
         margin-bottom: 5px;
         font-size: 16px;
       }
 
       .request-time {
-        color: #b9bbbe;
+        color: var(--color-text-muted);
         font-size: 12px;
       }
     }
@@ -271,19 +271,19 @@ const formatTime = (time: string | Date) => {
 
   .search-header {
     padding: 16px;
-    border-bottom: 1px solid #202225;
+    border-bottom: 1px solid var(--color-border-main);
 
     .search-input-container {
       max-width: 600px;
       margin: 0 auto;
 
       :deep(.el-input__inner) {
-        background-color: #40444b;
+        background-color: var(--color-bg-main);
         border: none;
-        color: #dcddde;
+        color: var(--color-text-normal);
 
         &::placeholder {
-          color: #72767d;
+          color: var(--color-text-muted);
         }
       }
     }
@@ -300,7 +300,7 @@ const formatTime = (time: string | Date) => {
       h2 {
         margin: 0;
         font-size: 16px;
-        color: #ffffff;
+        color: var(--color-text-normal);
       }
     }
 
@@ -311,7 +311,7 @@ const formatTime = (time: string | Date) => {
     }
 
     .user-item {
-      background-color: #2f3136;
+      background-color: var(--color-bg-main);
       border-radius: 5px;
       padding: 16px;
       display: flex;
@@ -344,14 +344,14 @@ const formatTime = (time: string | Date) => {
         flex: 1;
 
         .user-name {
-          color: #ffffff;
+          color: var(--color-text-normal);
           font-weight: 500;
           margin-bottom: 5px;
           font-size: 16px;
         }
 
         .user-email {
-          color: #b9bbbe;
+          color: var(--color-text-muted);
           font-size: 12px;
         }
       }
@@ -373,7 +373,7 @@ const formatTime = (time: string | Date) => {
   align-items: center;
   justify-content: center;
   padding: 60px 0;
-  color: #72767d;
+  color: var(--color-text-muted);
 
   i {
     font-size: 48px;
@@ -386,35 +386,35 @@ const formatTime = (time: string | Date) => {
 }
 
 :deep(.el-button--primary) {
-  background-color: #5865f2;
-  border-color: #5865f2;
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary-light);
 
   &:hover,
   &:focus {
-    background-color: #4752c4;
-    border-color: #4752c4;
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary-light);
   }
 }
 
 :deep(.el-button--danger) {
-  background-color: #ed4245;
-  border-color: #ed4245;
+  background-color: var(--color-danger-light);
+  border-color: var(--color-danger-light);
 
   &:hover,
   &:focus {
-    background-color: #c03c3f;
-    border-color: #c03c3f;
+    background-color: var(--color-danger-light);
+    border-color: var(--color-danger-light);
   }
 }
 
 :deep(.el-button--success) {
-  background-color: #43b581;
-  border-color: #43b581;
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary-light);
 
   &:hover,
   &:focus {
-    background-color: #3ca374;
-    border-color: #3ca374;
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary-light);
   }
 }
 </style>

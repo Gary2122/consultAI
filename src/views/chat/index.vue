@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-14 19:34:51
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-11 07:41:06
+ * @LastEditTime: 2025-05-15 13:01:50
 -->
 <template>
   <div class="chat-container overflow-hidden h-full">
@@ -807,7 +807,7 @@ onBeforeUnmount(() => {
   .chat-messages {
     padding: 16px;
     min-height: 100%;
-    background-color: #36393f;
+    background-color: var(--color-bg-main);
 
     .loading-state,
     .no-messages {
@@ -938,13 +938,13 @@ onBeforeUnmount(() => {
   .chat-input-area {
     flex-shrink: 0; /* 防止输入区域被压缩 */
     padding: 12px 16px;
-    background-color: #40444b;
+    background-color: var(--color-bg-main);
 
     .attachment-actions,
     .send-actions {
       display: flex;
       align-items: center;
-      color: #b9bbbe;
+      color: var(--color-text-muted);
 
       i {
         font-size: 24px;
@@ -952,7 +952,7 @@ onBeforeUnmount(() => {
         cursor: pointer;
 
         &:hover {
-          color: white;
+          color: var(--color-text-normal);
         }
 
         &.disabled {
@@ -960,7 +960,7 @@ onBeforeUnmount(() => {
           cursor: not-allowed;
 
           &:hover {
-            color: #b9bbbe;
+            color: var(--color-text-muted);
           }
         }
       }
@@ -971,9 +971,9 @@ onBeforeUnmount(() => {
       margin: 0 12px;
 
       :deep(.el-textarea__inner) {
-        background-color: #40444b;
+        background-color: var(--color-bg-main);
         border: none;
-        color: #dcddde;
+        color: var(--color-text-normal);
         resize: none;
 
         &:focus {
@@ -981,7 +981,7 @@ onBeforeUnmount(() => {
         }
 
         &::placeholder {
-          color: #72767d;
+          color: var(--color-text-muted);
         }
 
         &:disabled {

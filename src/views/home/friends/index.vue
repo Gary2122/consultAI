@@ -202,7 +202,7 @@ onMounted(() => {
 
 .friends-right {
   flex: 1;
-  background-color: #36393f;
+  background-color: var(--color-bg-main);
   display: flex;
   flex-direction: column;
 }

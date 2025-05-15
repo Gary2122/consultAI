@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-05-08 22:04:20
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-09 12:57:33
+ * @LastEditTime: 2025-05-15 12:55:20
 -->
 <template>
   <div class="notice-container">
@@ -24,7 +24,7 @@ import FriendSearchPanel from "@/components/home/friends/friendSearchPanel.vue";
 .notice-container {
   display: flex;
   height: 100%;
-  background-color: #36393f;
-  color: #dcddde;
+  background-color: var(--color-bg-main);
+  color: var(--color-text-normal);
 }
 </style>

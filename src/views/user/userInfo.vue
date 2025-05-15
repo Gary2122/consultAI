@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-05-06 11:27:30
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-06 10:51:53
+ * @LastEditTime: 2025-05-15 12:59:49
 -->
 <template>
   <div class="user-info-container">
@@ -454,18 +454,22 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .user-info-container {
-  background-color: #36393f;
-  color: #dcddde;
+  background-color: var(--color-bg-main);
+  color: var(--color-text-normal);
   min-height: 100vh;
   overflow: auto;
 }
 
 .user-banner {
   height: 200px;
-  background-image: linear-gradient(135deg, #7c5cfc, #5865f2);
+  background-image: linear-gradient(
+    135deg,
+    var(--color-primary-light),
+    var(--color-primary)
+  );
   background-size: cover;
   background-position: center;
-  position: relative;
+  position: relative; // 为了让 overlay 覆盖在 banner 上
 
   .banner-overlay {
     position: absolute;
@@ -517,8 +521,8 @@ onMounted(() => {
     position: relative;
 
     .user-avatar {
-      border: 6px solid #36393f;
-      background-color: #36393f;
+      border: 6px solid var(--color-bg-main);
+      background-color: var(--color-bg-main);
     }
 
     .status-badge {
@@ -543,7 +547,7 @@ onMounted(() => {
     }
 
     .user-id {
-      color: #b9bbbe;
+      color: var(--color-text-muted);
       font-size: 14px;
       margin-bottom: 5px;
     }
@@ -576,7 +580,7 @@ onMounted(() => {
 }
 
 .info-section {
-  background-color: #2f3136;
+  background-color: var(--color-primary-light);
   border-radius: 5px;
   margin-bottom: 20px;
   overflow: hidden;
@@ -587,7 +591,7 @@ onMounted(() => {
     color: white;
     margin: 0;
     padding: 15px;
-    background-color: #202225;
+    background-color: var(--color-bg-main);
     display: flex;
     align-items: center;
 
@@ -597,7 +601,7 @@ onMounted(() => {
 
     .subtitle {
       font-size: 12px;
-      color: #b9bbbe;
+      color: var(--color-text-muted);
       font-weight: normal;
       margin-left: 5px;
     }
@@ -615,13 +619,13 @@ onMounted(() => {
     }
 
     .info-label {
-      color: #b9bbbe;
+      color: var(--color-text-muted);
       font-size: 12px;
       margin-bottom: 5px;
     }
 
     .info-value {
-      color: white;
+      color: var(--color-text-normal);
       font-size: 14px;
 
       &.bio {
@@ -636,7 +640,7 @@ onMounted(() => {
     align-items: center;
     justify-content: center;
     padding: 20px;
-    color: #72767d;
+    color: var(--color-text-muted);
 
     i {
       font-size: 24px;
@@ -661,7 +665,7 @@ onMounted(() => {
 }
 
 .assessment-item {
-  background-color: #36393f;
+  background-color: var(--color-bg-main);
   border-radius: 4px;
   padding: 12px;
   margin-bottom: 10px;
@@ -676,12 +680,12 @@ onMounted(() => {
     margin-bottom: 10px;
 
     .assessment-name {
-      color: white;
+      color: var(--color-text-normal);
       font-weight: 500;
     }
 
     .assessment-date {
-      color: #b9bbbe;
+      color: var(--color-text-muted);
       font-size: 12px;
     }
   }
@@ -698,12 +702,12 @@ onMounted(() => {
 
     .score-text {
       font-weight: 500;
-      color: white;
+      color: var(--color-text-normal);
     }
   }
 
   .assessment-desc {
-    color: #b9bbbe;
+    color: var(--color-text-muted);
     font-size: 13px;
   }
 }
@@ -714,7 +718,7 @@ onMounted(() => {
   gap: 15px;
 
   .stat-item {
-    background-color: #36393f;
+    background-color: var(--color-bg-main);
     border-radius: 4px;
     padding: 15px;
     text-align: center;
@@ -722,12 +726,12 @@ onMounted(() => {
     .stat-value {
       font-size: 24px;
       font-weight: 600;
-      color: white;
+      color: var(--color-text-normal);
       margin-bottom: 5px;
     }
 
     .stat-label {
-      color: #b9bbbe;
+      color: var(--color-text-muted);
       font-size: 13px;
     }
   }
@@ -745,7 +749,7 @@ onMounted(() => {
     .activity-icon {
       width: 40px;
       height: 40px;
-      background-color: #5865f2;
+      background-color: var(--color-primary-light);
       border-radius: 50%;
       display: flex;
       align-items: center;

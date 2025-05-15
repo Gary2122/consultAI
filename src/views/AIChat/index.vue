@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-28 14:25:41
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-04-28 15:36:08
+ * @LastEditTime: 2025-05-15 13:02:53
 -->
 <template>
   <div class="ai-chat-container">
@@ -337,8 +337,8 @@ onMounted(() => {
 .ai-chat-container {
   display: flex;
   flex-direction: column;
-  background-color: #36393f;
-  color: #dcddde;
+  background-color: var(--color-bg-main);
+  color: var(--color-text-normal);
   overflow: hidden;
   height: 100%;
 
@@ -357,13 +357,13 @@ onMounted(() => {
         margin-left: 12px;
         font-weight: 600;
         font-size: 16px;
-        color: white;
+        color: var(--color-text-normal);
       }
 
       .ai-status {
         margin-left: 12px;
         font-size: 12px;
-        color: #b9bbbe;
+        color: var(--color-text-muted);
         display: flex;
         align-items: center;
 
@@ -388,7 +388,7 @@ onMounted(() => {
         font-size: 18px;
 
         &:hover {
-          color: white;
+          color: var(--color-text-normal);
         }
       }
     }
@@ -413,12 +413,12 @@ onMounted(() => {
       }
 
       h2 {
-        color: white;
+        color: var(--color-text-normal);
         margin-bottom: 8px;
       }
 
       p {
-        color: #b9bbbe;
+        color: var(--color-text-muted);
         margin-bottom: 24px;
         max-width: 500px;
       }
@@ -431,14 +431,14 @@ onMounted(() => {
         max-width: 600px;
 
         .prompt-item {
-          background-color: #40444b;
+          background-color: var(--color-bg-main);
           padding: 8px 16px;
           border-radius: 16px;
           cursor: pointer;
           transition: background-color 0.2s;
 
           &:hover {
-            background-color: #5865f2;
+            background-color: var(--color-primary-light);
           }
         }
       }
@@ -520,17 +520,17 @@ onMounted(() => {
 
   .chat-input-area {
     padding: 16px;
-    background-color: #40444b;
+    background-color: var(--color-bg-main);
 
     .input-wrapper {
-      background-color: #36393f;
+      background-color: var(--color-bg-main);
       border-radius: 8px;
       padding: 12px;
 
       :deep(.el-textarea__inner) {
         background-color: transparent;
         border: none;
-        color: white;
+        color: var(--color-text-normal);
         font-size: 14px;
         padding: 0;
 
@@ -549,7 +549,7 @@ onMounted(() => {
           color: #b9bbbe;
 
           &:hover:not(:disabled) {
-            color: white;
+            color: var(--color-text-normal);
           }
 
           &:disabled {
@@ -558,16 +558,16 @@ onMounted(() => {
         }
 
         .send-button {
-          background-color: #5865f2;
-          color: white;
+          background-color: var(--color-primary-light);
+          color: var(--color-text-normal);
           border: none;
 
           &:hover:not(:disabled) {
-            background-color: #4752c4;
+            background-color: var(--color-primary-light);
           }
 
           &:disabled {
-            background-color: #3b4590;
+            background-color: var(--color-primary-light);
             color: rgba(255, 255, 255, 0.5);
           }
         }
