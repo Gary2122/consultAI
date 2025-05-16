@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-30 16:12:37
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-13 20:12:42
+ * @LastEditTime: 2025-05-16 14:01:23
 -->
 <template>
   <div class="user-settings-container">
@@ -28,18 +28,18 @@
           <i class="el-icon-view"></i>
           <span>隐私设置</span>
         </el-menu-item>
-        <el-menu-item index="notification">
+        <!-- <el-menu-item index="notification">
           <i class="el-icon-bell"></i>
           <span>通知设置</span>
-        </el-menu-item>
+        </el-menu-item> -->
         <el-menu-item index="appearance">
           <i class="el-icon-brush"></i>
           <span>外观设置</span>
         </el-menu-item>
-        <el-menu-item index="language">
+        <!-- <el-menu-item index="language">
           <i class="el-icon-document"></i>
           <span>语言与地区</span>
-        </el-menu-item>
+        </el-menu-item> -->
       </el-menu>
 
       <div class="account-info">
