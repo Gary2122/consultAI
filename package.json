@@ -14,6 +14,7 @@
     "element-plus": "^2.8.7",
     "gsap": "^3.12.7",
     "lottie-web": "^5.12.2",
+    "marked": "^15.0.11",
     "mixin": "^0.2.0",
     "normalize.css": "^8.0.1",
     "path": "^0.12.7",
@@ -21,6 +22,7 @@
     "pinia-plugin-persist": "^1.0.0",
     "socket.io-client": "^4.8.1",
     "vue": "^3.5.12",
+    "vue-markdown": "^2.2.4",
     "vue-router": "^4.4.5",
     "vue3-lottie": "^3.3.1"
   },

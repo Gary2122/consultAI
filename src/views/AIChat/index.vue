@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-28 14:25:41
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-16 13:49:52
+ * @LastEditTime: 2025-05-17 15:24:05
 -->
 <template>
   <div class="ai-chat-container">
@@ -85,7 +85,12 @@
               <span class="message-time">{{ msg.time }}</span>
             </div>
             <div class="message-text" v-if="!msg.thinking">
-              {{ msg.content }}
+              <div
+                v-if="!msg.isUser"
+                v-html="marked(msg.content)"
+                class="markdown-content"
+              ></div>
+              <template v-else>{{ msg.content }}</template>
             </div>
             <div class="thinking-indicator" v-else>
               <span class="dot"></span>
@@ -173,6 +178,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from "vue";
+import { marked } from "marked";
 
 // 消息类型定义
 interface Message {
@@ -218,7 +224,6 @@ const sendMessage = async () => {
   messages.value.push(userMessage);
 
   // 清空输入
-  const userInput = inputMessage.value;
   inputMessage.value = "";
 
   // 显示AI思考中
@@ -236,29 +241,64 @@ const sendMessage = async () => {
   // 滚动到底部
   await scrollToBottom();
 
-  // 模拟API调用
   try {
-    // 这里应该是实际的API调用
-    // const response = await callAiApi(userInput);
+    // 准备消息历史
+    const messageHistory = messages.value
+      .filter((msg) => !msg.thinking)
+      .map((msg) => ({
+        role: msg.isUser ? "user" : "assistant",
+        content: msg.content,
+      }));
 
-    // 模拟延迟
-    setTimeout(() => {
-      // 移除思考中的消息
-      messages.value.pop();
+    // 发送POST请求
+    const response = await fetch("http://localhost:3000/api/ai-chat/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ messages: messageHistory }),
+    });
 
-      // 添加AI回复
-      messages.value.push({
-        content: generateAiResponse(userInput),
-        isUser: false,
-        time: new Date().toLocaleTimeString("zh-CN", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      });
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
 
-      isProcessing.value = false;
-      scrollToBottom();
-    }, 1500);
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("No reader available");
+    }
+
+    let aiResponse = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      // 将 Uint8Array 转换为字符串
+      const chunk = new TextDecoder().decode(value);
+      const lines = chunk.split("\n");
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            aiResponse += data.content;
+
+            // 更新最后一条消息的内容
+            const lastMessage = messages.value[messages.value.length - 1];
+            if (lastMessage && !lastMessage.isUser) {
+              lastMessage.content = aiResponse;
+              lastMessage.thinking = false;
+            }
+          } catch (e) {
+            console.error("Error parsing SSE data:", e);
+          }
+        }
+      }
+    }
+
+    isProcessing.value = false;
+    scrollToBottom();
   } catch (error) {
     console.error("AI API error:", error);
     messages.value.pop(); // 移除思考中的消息
@@ -282,29 +322,6 @@ const sendMessage = async () => {
 const sendPromptMessage = (prompt: string) => {
   inputMessage.value = prompt;
   sendMessage();
-};
-
-// 生成模拟AI回复
-const generateAiResponse = (userInput: string): string => {
-  const lowercaseInput = userInput.toLowerCase();
-
-  if (lowercaseInput.includes("焦虑")) {
-    return "焦虑是一种常见的情绪反应。我建议你可以尝试深呼吸练习、正念冥想或渐进式肌肉放松技术来缓解焦虑。保持规律的体育锻炼、充足的睡眠和健康的饮食也很重要。如果焦虑严重影响到你的日常生活，建议咨询专业心理医生。";
-  } else if (lowercaseInput.includes("睡眠")) {
-    return "改善睡眠质量的方法包括：保持规律的作息时间、睡前避免使用电子设备、创造舒适的睡眠环境、避免晚间摄入咖啡因和酒精、睡前做些放松活动如阅读或泡温水澡。如果长期存在睡眠问题，建议咨询专业医生。";
-  } else if (
-    lowercaseInput.includes("压力") ||
-    lowercaseInput.includes("工作")
-  ) {
-    return "工作压力是现代生活中的常见挑战。你可以尝试设定合理的目标和界限、学习时间管理技巧、定期休息、寻求同事或上级的支持、培养工作外的兴趣爱好来平衡生活。记住，适当的压力是正常的，但持续的过度压力需要及时处理。";
-  } else if (
-    lowercaseInput.includes("人际") ||
-    lowercaseInput.includes("冲突")
-  ) {
-    return '处理人际冲突时，保持平和的沟通态度很重要。尝试用"我"陈述句表达感受，而不是指责对方；积极倾听对方的观点；寻找共同点而非分歧；必要时寻求第三方调解。记住，健康的关系不是没有冲突，而是能够妥善处理冲突。';
-  } else {
-    return "感谢你的分享。作为你的心理AI助手，我理解你的感受很重要。你能再多告诉我一些细节吗？这样我可以提供更有针对性的建议和支持。";
-  }
 };
 
 // 清空对话
@@ -474,6 +491,79 @@ onMounted(() => {
 
         .message-text {
           word-break: break-word;
+
+          .markdown-content {
+            color: inherit;
+            font-size: inherit;
+            line-height: 1.6;
+
+            :deep(p) {
+              margin: 0.5em 0;
+            }
+
+            :deep(ul),
+            :deep(ol) {
+              margin: 0.5em 0;
+              padding-left: 1.5em;
+            }
+
+            :deep(li) {
+              margin: 0.3em 0;
+            }
+
+            :deep(code) {
+              background-color: rgba(0, 0, 0, 0.1);
+              padding: 0.2em 0.4em;
+              border-radius: 3px;
+              font-family: monospace;
+            }
+
+            :deep(pre) {
+              background-color: rgba(0, 0, 0, 0.1);
+              padding: 1em;
+              border-radius: 5px;
+              overflow-x: auto;
+              margin: 0.5em 0;
+
+              code {
+                background-color: transparent;
+                padding: 0;
+              }
+            }
+
+            :deep(blockquote) {
+              border-left: 4px solid rgba(255, 255, 255, 0.2);
+              margin: 0.5em 0;
+              padding-left: 1em;
+              color: rgba(255, 255, 255, 0.8);
+            }
+
+            :deep(h1),
+            :deep(h2),
+            :deep(h3),
+            :deep(h4),
+            :deep(h5),
+            :deep(h6) {
+              margin: 0.8em 0 0.4em;
+              line-height: 1.4;
+            }
+
+            :deep(table) {
+              border-collapse: collapse;
+              margin: 0.5em 0;
+              width: 100%;
+
+              th,
+              td {
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                padding: 0.5em;
+              }
+
+              th {
+                background-color: rgba(255, 255, 255, 0.1);
+              }
+            }
+          }
         }
 
         .thinking-indicator {
