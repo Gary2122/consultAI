@@ -4,10 +4,51 @@
  * @Author: Garrison
  * @Date: 2025-04-28 14:25:41
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-17 15:24:05
+ * @LastEditTime: 2025-05-17 20:08:00
 -->
 <template>
   <div class="ai-chat-container">
+    <!-- 历史会话抽屉 -->
+    <el-drawer
+      v-model="showHistory"
+      title="历史会话"
+      direction="rtl"
+      size="300px"
+    >
+      <div class="history-actions flex-cc pb-16">
+        <el-button
+          color="#626aef"
+          @click="createNewSession"
+          style="width: 150px; border: 1px solid #ffffff"
+          dark="true"
+          >新建对话</el-button
+        >
+        <el-button
+          color="#f5f5f5"
+          @click="createNewSession"
+          style="
+            flex: 1;
+            background-color: #2e2e2e6c;
+            border: 2px dashed #bdbdbd;
+          "
+          plain
+          >匿名对话</el-button
+        >
+      </div>
+      <div class="history-list">
+        <div
+          v-for="(session, index) in historySessions"
+          :key="index"
+          class="history-item"
+          :class="{ active: currentSessionId === session.id }"
+          @click="loadSession(session)"
+        >
+          <div class="session-title">{{ session.title }}</div>
+          <div class="session-time">{{ session.time }}</div>
+        </div>
+      </div>
+    </el-drawer>
+
     <!-- 聊天头部 -->
     <div class="chat-header">
       <div class="ai-info">
@@ -21,6 +62,12 @@
         </div>
       </div>
       <div class="header-actions">
+        <el-tooltip content="历史会话" placement="bottom">
+          <el-button type="text" icon="el-icon-time" @click="showHistory = true"
+            >历史对话
+          </el-button>
+          >
+        </el-tooltip>
         <el-tooltip content="清空对话" placement="bottom">
           <el-button
             type="text"
@@ -178,6 +225,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from "vue";
+import { ElMessage } from "element-plus";
 import { marked } from "marked";
 
 // 消息类型定义
@@ -188,12 +236,24 @@ interface Message {
   thinking?: boolean;
 }
 
+// 会话类型定义
+interface Session {
+  id: string;
+  title: string;
+  time: string;
+  messages: Message[];
+}
+
 // 响应式状态
 const inputMessage = ref("");
 const messages = ref<Message[]>([]);
 const isProcessing = ref(false);
 const chatContentRef = ref<HTMLElement | null>(null);
 const showSettings = ref(false);
+const showHistory = ref(false);
+const historySessions = ref<Session[]>([]);
+const currentSessionId = ref<string>("");
+const isAnonymous = ref(false);
 
 // AI设置
 const aiModel = ref("psychology-expert");
@@ -208,9 +268,100 @@ const suggestionPrompts = [
   "如何处理人际关系中的冲突？",
 ];
 
+// 处理匿名模式切换
+const handleAnonymousChange = (value: boolean) => {
+  if (value) {
+    // 切换到匿名模式时，清除当前会话
+    clearConversation();
+  } else {
+    // 切换到正常模式时，创建新会话
+    createNewSession();
+  }
+};
+
+// 创建新会话
+const createNewSession = () => {
+  if (isAnonymous.value) {
+    // 匿名模式下不创建会话记录
+    currentSessionId.value = "";
+    messages.value = [];
+    return "";
+  }
+  if (messages.value.length === 0) {
+    ElMessage.success("目前已经是最新对话了~");
+    return;
+  }
+
+  const sessionId = Date.now().toString();
+  const newSession: Session = {
+    id: sessionId,
+    title: "新会话",
+    time: new Date().toLocaleString("zh-CN"),
+    messages: [],
+  };
+  historySessions.value.unshift(newSession);
+  currentSessionId.value = sessionId;
+  messages.value = [];
+  return sessionId;
+};
+
+// 加载会话
+const loadSession = async (session: Session) => {
+  currentSessionId.value = session.id;
+  messages.value = session.messages;
+  showHistory.value = false;
+  await scrollToBottom();
+};
+
+// 保存会话
+const saveSession = async () => {
+  // 匿名模式下不保存会话
+  if (isAnonymous.value) {
+    return;
+  }
+
+  if (!currentSessionId.value) {
+    createNewSession();
+  }
+
+  const session = historySessions.value.find(
+    (s) => s.id === currentSessionId.value
+  );
+  if (session) {
+    session.messages = messages.value;
+    session.time = new Date().toLocaleString("zh-CN");
+
+    // 更新会话标题（使用第一条用户消息作为标题）
+    const firstUserMessage = messages.value.find((msg) => msg.isUser);
+    if (firstUserMessage) {
+      session.title =
+        firstUserMessage.content.slice(0, 20) +
+        (firstUserMessage.content.length > 20 ? "..." : "");
+    }
+
+    // 保存到后端
+    try {
+      await fetch("http://localhost:3000/api/ai-chat/sessions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(session),
+      });
+    } catch (error) {
+      console.error("Failed to save session:", error);
+    }
+  }
+};
+
 // 发送消息到AI
 const sendMessage = async () => {
   if (!inputMessage.value.trim() || isProcessing.value) return;
+
+  // 如果没有当前会话，创建新会话
+  if (!currentSessionId.value) {
+    createNewSession();
+  }
 
   // 添加用户消息
   const userMessage: Message = {
@@ -297,6 +448,9 @@ const sendMessage = async () => {
       }
     }
 
+    // 保存会话
+    await saveSession();
+
     isProcessing.value = false;
     scrollToBottom();
   } catch (error) {
@@ -327,6 +481,9 @@ const sendPromptMessage = (prompt: string) => {
 // 清空对话
 const clearConversation = () => {
   messages.value = [];
+  if (!isAnonymous.value) {
+    currentSessionId.value = "";
+  }
 };
 
 // 保存设置
@@ -345,11 +502,31 @@ const scrollToBottom = async () => {
 };
 
 // 组件挂载后
-onMounted(() => {
-  // 可以在这里添加初始化逻辑，例如加载历史消息
+onMounted(async () => {
+  // 加载历史会话
+  try {
+    const response = await fetch("http://localhost:3000/api/ai-chat/sessions");
+    if (response.ok) {
+      const sessions = await response.json();
+      historySessions.value = sessions;
+    }
+  } catch (error) {
+    console.error("Failed to load sessions:", error);
+  }
 });
 </script>
 
+<style scoped>
+:deep(.el-drawer__header) {
+  margin-bottom: 0;
+}
+:deep(.el-drawer__title) {
+  font-size: 20px;
+}
+:deep(.el-drawer__header) {
+  padding-bottom: 16px;
+}
+</style>
 <style lang="scss" scoped>
 .ai-chat-container {
   display: flex;
@@ -680,6 +857,41 @@ onMounted(() => {
         width: 200px;
       }
     }
+  }
+
+  .history-list {
+    padding: 16px;
+
+    .history-item {
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-bottom: 8px;
+
+      &:hover {
+        background-color: var(--color-bg-hover);
+      }
+
+      &.active {
+        background-color: var(--color-primary-light);
+      }
+
+      .session-title {
+        font-weight: 500;
+        margin-bottom: 4px;
+        color: var(--color-text-normal);
+      }
+
+      .session-time {
+        font-size: 12px;
+        color: var(--color-text-muted);
+      }
+    }
+  }
+
+  .history-actions {
+    border-bottom: 1px solid var(--color-border);
   }
 }
 
