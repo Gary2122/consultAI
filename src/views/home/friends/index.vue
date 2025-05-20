@@ -47,10 +47,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
-import { searchFriends, getFriends } from "@/actions/friends";
+import { getFriends } from "@/actions/friends";
 import { useFriendsStore } from "@/stores/friends";
+import socketService from "@/services/socket";
 
 import searchInput from "@/components/home/input/searchInput.vue";
 import friendListItem from "@/components/home/friends/friendListItem.vue";
@@ -58,10 +59,10 @@ import friendListItem from "@/components/home/friends/friendListItem.vue";
 const router = useRouter();
 const activeTab = ref("friends");
 const searchText = ref("");
-const selectedId = ref(1);
+const selectedId = ref<string | number>(1);
 const friendsStore = useFriendsStore();
 
-// 模拟数据
+// 好友数据
 const friends = ref<any[]>([]);
 
 // 获取好友列表
@@ -73,47 +74,43 @@ const getFriendsList = async () => {
     friends.value = friendsList;
     friendsStore.setFriends(friendsList);
   }
-  console.log(friends.value);
+  console.log("好友列表:", friends.value);
 };
 
-// 搜索好友
-// const searchFriendsList = async () => {
-//   const searchResult = await searchFriends(searchText.value);
-//   friends.value = searchResult;
-//   console.log(searchResult);
-// };
+// 监听好友列表变化
+watch(
+  () => friendsStore.getFriendsList,
+  (newFriends) => {
+    friends.value = newFriends;
+    console.log("好友列表已更新:", newFriends);
+  },
+  { deep: true }
+);
 
-// 根据在线状态过滤好友
+// 过滤在线好友（包括online, away, busy状态）
 const getOnlineFriends = computed(() => {
   return friends.value.filter((friend) => {
-    if (
-      friend.status === "online" &&
-      friend.username.toLowerCase().includes(searchText.value.toLowerCase())
-    ) {
-      return {
-        ...friend,
-        online: true,
-      };
-    }
+    const isOnline = ["online", "away", "busy"].includes(friend.status);
+    const matchesSearch = friend.username
+      .toLowerCase()
+      .includes(searchText.value.toLowerCase());
+    return isOnline && matchesSearch;
   });
 });
 
+// 过滤离线好友
 const getOfflineFriends = computed(() => {
   return friends.value.filter((friend) => {
-    if (
-      friend.status === "offline" &&
-      friend.username.toLowerCase().includes(searchText.value.toLowerCase())
-    ) {
-      return {
-        ...friend,
-        online: false,
-      };
-    }
+    const isOffline = friend.status === "offline";
+    const matchesSearch = friend.username
+      .toLowerCase()
+      .includes(searchText.value.toLowerCase());
+    return isOffline && matchesSearch;
   });
 });
 
 // 选择好友或群组
-const handleSelect = (id: number) => {
+const handleSelect = (id: string | number) => {
   selectedId.value = id;
   // 导航到对应的聊天页面
   const path =
@@ -123,8 +120,23 @@ const handleSelect = (id: number) => {
   router.push(path);
 };
 
+// 手动刷新好友状态
+const refreshFriendStatuses = () => {
+  if (socketService.isConnected.value) {
+    socketService.fetchFriendsStatus();
+  }
+};
+
 onMounted(() => {
   getFriendsList();
+
+  // 确保Socket连接后，获取最新好友状态
+  if (socketService.isConnected.value) {
+    refreshFriendStatuses();
+  } else {
+    // 如果还没连接，等待一段时间后再尝试
+    setTimeout(refreshFriendStatuses, 2000);
+  }
 });
 </script>
 

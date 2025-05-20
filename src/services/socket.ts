@@ -140,6 +140,17 @@ class SocketService {
       if (this.chatStore) {
         this.chatStore.setConnectionState(true);
       }
+
+      // 确保初始化友好，先进行初始化
+      this.init();
+
+      // 连接成功后，主动请求一次好友状态更新
+      // 增加延迟以确保服务器已完成处理
+      setTimeout(() => {
+        if (!this.socket) return;
+        console.log("发送status:fetch请求获取最新好友状态");
+        this.fetchFriendsStatus();
+      }, 1000);
     });
 
     // 连接断开
@@ -208,14 +219,21 @@ class SocketService {
       this.handleMessageRead(readData);
     });
 
-    // 用户状态变化 - 修改为服务器实际发送的事件名
+    // 用户状态变化
     this.socket.on("user:status", (data: any) => {
-      console.log("用户状态变化:", data);
-      // 适配数据结构
+      console.log("收到用户状态变化:", data);
+
+      // 确保数据格式一致
       const statusData = {
         userId: data.userId || data.id,
         status: data.status || "offline",
       };
+
+      // 确保stores已初始化
+      if (!this.friendsStore || !this.userStore) {
+        this.init();
+      }
+
       this.handleUserStatus(statusData);
     });
 
@@ -631,16 +649,6 @@ class SocketService {
         if (pendingIndex !== -1) {
           // 找到对应的pending消息，用新消息替换它
           console.log(`替换原pending消息，索引: ${pendingIndex}`);
-
-          // 确保匿名状态与原pending消息一致
-          const pendingMsg = chatStore.messages[chatId][pendingIndex];
-          if (pendingMsg.isAnonymous && !messageData.isAnonymous) {
-            console.log("修正匿名状态: 后端未返回匿名标记，但原消息是匿名的");
-            messageData.isAnonymous = true;
-            messageData.sender = "匿名用户";
-            messageData.avatar = "";
-          }
-
           chatStore.messages[chatId].splice(pendingIndex, 1);
         }
       }
@@ -676,21 +684,34 @@ class SocketService {
    */
   private handleUserStatus(data: {
     userId: string;
-    status: "online" | "offline";
+    status: "online" | "offline" | "away" | "busy";
   }) {
     console.log("处理用户状态变化:", data);
 
     if (!this.friendsStore) {
       console.error("Friends store未初始化，无法处理用户状态");
-      return;
+      this.init(); // 尝试初始化
+
+      if (!this.friendsStore) {
+        return; // 如果仍然未初始化，则退出
+      }
     }
 
     try {
+      // 记录状态更新，用于调试
+      console.log(`状态更新: 用户 ${data.userId} 状态变为 ${data.status}`);
+
       // 更新好友状态
       this.friendsStore.updateFriendStatus({
         userId: data.userId,
         status: data.status,
       });
+
+      // 同时更新userStore中的状态（如果是当前用户）
+      if (this.userStore && this.userStore.userId === data.userId) {
+        console.log(`更新当前用户状态: ${data.status}`);
+        this.userStore.setStatus(data.status);
+      }
     } catch (error) {
       console.error("处理用户状态变化时出错:", error);
     }
@@ -785,6 +806,37 @@ class SocketService {
     } else {
       console.error("达到最大重连次数，停止重连");
       ElMessage.error("无法连接到聊天服务器，请刷新页面或重新登录");
+    }
+  }
+
+  /**
+   * 手动获取好友状态
+   * 当连接建立后或需要重新同步状态时调用
+   */
+  fetchFriendsStatus() {
+    if (!this.socket || !this.isConnected.value) {
+      console.error("Socket.IO未连接，无法获取好友状态");
+      return false;
+    }
+
+    try {
+      console.log("正在获取好友状态...");
+      this.socket.emit("status:fetch");
+
+      // 添加监听器来确认状态获取完成
+      this.socket.once("status:fetched", () => {
+        console.log("好友状态获取完成");
+
+        // 触发一个事件通知组件状态已更新
+        if (this.friendsStore) {
+          this.friendsStore.lastUpdated = Date.now();
+        }
+      });
+
+      return true;
+    } catch (error) {
+      console.error("获取好友状态失败:", error);
+      return false;
     }
   }
 }

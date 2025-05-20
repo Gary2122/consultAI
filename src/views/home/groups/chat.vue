@@ -26,139 +26,144 @@
     </div>
 
     <!-- 聊天内容区 -->
-    <div class="chat-messages" ref="messagesContainer">
-      <div v-if="loading" class="loading-container">
-        <el-spinner />
-      </div>
-      <template v-else>
-        <div v-if="messages.length === 0" class="empty-messages">
-          <div class="welcome-message">
-            <div class="title">欢迎来到 {{ currentGroup.name }}</div>
-            <div class="description">这是聊天的开始，来说点什么吧！</div>
-          </div>
+    <el-scrollbar ref="messagesScrollRef">
+      <div class="chat-messages" ref="messagesContainer">
+        <div v-if="loading" class="loading-container">
+          <el-spinner />
         </div>
-        <div v-else class="message-list">
-          <div
-            v-for="(message, index) in filterDuplicateMessages(messages)"
-            :key="message._id"
-            :class="[
-              'message-item',
-              message.pending ? 'pending' : '',
-              message.failed ? 'failed' : '',
-            ]"
-          >
-            <!-- 显示日期分隔线 -->
-            <div
-              v-if="shouldShowDateDivider(message, index)"
-              class="date-divider"
-            >
-              <span>{{ formatDate(message.createdAt) }}</span>
+        <template v-else>
+          <div v-if="messages.length === 0" class="empty-messages">
+            <div class="welcome-message">
+              <div class="title">欢迎来到 {{ currentGroup.name }}</div>
+              <div class="description">这是聊天的开始，来说点什么吧！</div>
             </div>
-
+          </div>
+          <div v-else class="message-list">
             <div
-              class="message-container"
-              :class="{ 'self-container': message.isSelf }"
+              v-for="(message, index) in filterDuplicateMessages(messages)"
+              :key="message._id"
+              :class="[
+                'message-item',
+                message.pending ? 'pending' : '',
+                message.failed ? 'failed' : '',
+              ]"
             >
-              <!-- 显示发送者信息 -->
+              <!-- 显示日期分隔线 -->
               <div
-                v-if="shouldShowSender(message, index) && !message.isSelf"
-                class="sender-info"
+                v-if="shouldShowDateDivider(message, index)"
+                class="date-divider"
               >
-                <template v-if="message.isAnonymous">
-                  <el-avatar
-                    :size="36"
-                    icon="el-icon-user"
-                    class="anonymous-avatar"
-                  />
-                  <div class="sender-name anonymous-name">
-                    {{ message.sender }}
-                    <el-tooltip content="匿名消息" placement="top">
-                      <el-tag size="small" effect="dark" class="anonymous-tag"
-                        >匿名</el-tag
-                      >
-                    </el-tooltip>
-                  </div>
-                </template>
-                <template v-else>
-                  <el-avatar
-                    :size="36"
-                    :src="message.avatar || defaultAvatar"
-                  />
-                  <div class="sender-name">{{ message.sender }}</div>
-                </template>
-                <div class="message-time">
-                  {{ formatTime(message.createdAt) }}
-                </div>
+                <span>{{ formatDate(message.createdAt) }}</span>
               </div>
 
               <div
-                class="message-content"
-                :class="{
-                  'no-sender':
-                    !shouldShowSender(message, index) && !message.isSelf,
-                  'self-message': message.isSelf,
-                  'anonymous-message': message.isAnonymous,
-                  'message-theme-self': message.isSelf,
-                  'message-theme-other': !message.isSelf,
-                }"
+                class="message-container"
+                :class="{ 'self-container': message.isSelf }"
               >
-                <!-- 匿名标记，仅显示在自己发送的匿名消息上 -->
+                <!-- 显示发送者信息 -->
                 <div
-                  v-if="message.isSelf && message.isAnonymous"
-                  class="anonymous-indicator"
+                  v-if="shouldShowSender(message, index) && !message.isSelf"
+                  class="sender-info"
                 >
-                  <el-tag size="small" effect="dark" class="anonymous-tag"
-                    >匿名</el-tag
+                  <template v-if="message.isAnonymous">
+                    <el-avatar
+                      :size="36"
+                      icon="el-icon-user"
+                      class="anonymous-avatar"
+                    />
+                    <div class="sender-name anonymous-name">
+                      {{ message.sender }}
+                      <el-tooltip content="匿名消息" placement="top">
+                        <el-tag size="small" effect="dark" class="anonymous-tag"
+                          >匿名</el-tag
+                        >
+                      </el-tooltip>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <el-avatar
+                      :size="36"
+                      :src="message.avatar || defaultAvatar"
+                    />
+                    <div class="sender-name">{{ message.sender }}</div>
+                  </template>
+                  <div class="message-time">
+                    {{ formatTime(message.createdAt) }}
+                  </div>
+                </div>
+
+                <div
+                  class="message-content"
+                  :class="{
+                    'no-sender':
+                      !shouldShowSender(message, index) && !message.isSelf,
+                    'self-message': message.isSelf,
+                    'anonymous-message': message.isAnonymous,
+                    'message-theme-self': message.isSelf,
+                    'message-theme-other': !message.isSelf,
+                  }"
+                >
+                  <!-- 匿名标记，仅显示在自己发送的匿名消息上 -->
+                  <div
+                    v-if="message.isSelf && message.isAnonymous"
+                    class="anonymous-indicator"
+                  >
+                    <el-tag size="small" effect="dark" class="anonymous-tag"
+                      >匿名</el-tag
+                    >
+                  </div>
+
+                  <div
+                    v-if="message.messageType === 'text'"
+                    class="text-content"
+                  >
+                    {{ message.content }}
+                  </div>
+                  <div
+                    v-else-if="message.messageType === 'image'"
+                    class="image-content"
+                  >
+                    <img
+                      :src="message.fileUrl || ''"
+                      @click="
+                        message.fileUrl ? previewImage(message.fileUrl) : null
+                      "
+                    />
+                  </div>
+                  <div v-else class="file-content">
+                    <a :href="message.fileUrl || ''" target="_blank">
+                      <i class="el-icon-document"></i> 文件
+                    </a>
+                  </div>
+
+                  <div v-if="message.pending" class="status-icon pending">
+                    <i class="el-icon-loading"></i>
+                  </div>
+                  <div v-else-if="message.failed" class="status-icon failed">
+                    <i class="el-icon-warning-outline"></i>
+                  </div>
+
+                  <div v-if="message.isSelf" class="self-message-time">
+                    {{ formatTime(message.createdAt) }}
+                  </div>
+                </div>
+
+                <!-- 失败消息的重试按钮 -->
+                <div
+                  v-if="message.failed"
+                  class="retry-button"
+                  :class="{ 'self-retry': message.isSelf }"
+                >
+                  <el-button size="mini" @click="retryMessage(message)"
+                    >重试</el-button
                   >
                 </div>
-
-                <div v-if="message.messageType === 'text'" class="text-content">
-                  {{ message.content }}
-                </div>
-                <div
-                  v-else-if="message.messageType === 'image'"
-                  class="image-content"
-                >
-                  <img
-                    :src="message.fileUrl || ''"
-                    @click="
-                      message.fileUrl ? previewImage(message.fileUrl) : null
-                    "
-                  />
-                </div>
-                <div v-else class="file-content">
-                  <a :href="message.fileUrl || ''" target="_blank">
-                    <i class="el-icon-document"></i> 文件
-                  </a>
-                </div>
-
-                <div v-if="message.pending" class="status-icon pending">
-                  <i class="el-icon-loading"></i>
-                </div>
-                <div v-else-if="message.failed" class="status-icon failed">
-                  <i class="el-icon-warning-outline"></i>
-                </div>
-
-                <div v-if="message.isSelf" class="self-message-time">
-                  {{ formatTime(message.createdAt) }}
-                </div>
-              </div>
-
-              <!-- 失败消息的重试按钮 -->
-              <div
-                v-if="message.failed"
-                class="retry-button"
-                :class="{ 'self-retry': message.isSelf }"
-              >
-                <el-button size="mini" @click="retryMessage(message)"
-                  >重试</el-button
-                >
               </div>
             </div>
           </div>
-        </div>
-      </template>
-    </div>
+        </template>
+      </div>
+    </el-scrollbar>
 
     <!-- 消息输入区 -->
     <div class="chat-input bg-theme-secondary">
@@ -284,7 +289,7 @@ import { useRoute } from "vue-router";
 import { useGroupStore } from "@/stores/group";
 import { useChatStore } from "@/stores/chat";
 import { useUserStore } from "@/stores/user";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElScrollbar } from "element-plus";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale/zh-CN";
 import { QuestionFilled } from "@element-plus/icons-vue";
@@ -293,12 +298,12 @@ const route = useRoute();
 const groupStore = useGroupStore();
 const chatStore = useChatStore();
 const userStore = useUserStore();
-console.log("当前用户:", userStore.userId);
 
 // 状态变量
 const loading = ref(false);
 const inputMessage = ref("");
 const messagesContainer = ref<HTMLElement | null>(null);
+const messagesScrollRef = ref<InstanceType<typeof ElScrollbar>>();
 const showGroupInfo = ref(false);
 const imageInput = ref<HTMLInputElement | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -465,10 +470,20 @@ const previewImage = (url: string | null) => {
 
 // 滚动到底部
 const scrollToBottom = () => {
-  if (messagesContainer.value) {
-    console.log("滚动到底部");
-    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
-  }
+  setTimeout(() => {
+    if (messagesScrollRef.value) {
+      // 使用ElScrollbar的滚动方法，设置为最大值让其滚动到底部
+      console.log("正在滚动到底部...");
+      messagesScrollRef.value.setScrollTop(9999999);
+
+      // 再次尝试滚动，确保内容完全加载后的滚动
+      setTimeout(() => {
+        if (messagesScrollRef.value) {
+          messagesScrollRef.value.setScrollTop(9999999);
+        }
+      }, 100);
+    }
+  }, 10);
 };
 
 // 格式化日期
@@ -613,7 +628,7 @@ onMounted(async () => {
 
 .chat-header {
   height: 60px;
-  padding: 0 16px;
+  padding: 16px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;

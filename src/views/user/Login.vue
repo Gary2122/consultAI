@@ -40,6 +40,21 @@ import { useUserStore } from "@/stores/user";
 import socketService from "@/services/socket";
 import { ElMessage } from "element-plus";
 
+// 定义API响应接口
+interface LoginResponse {
+  success: boolean;
+  message?: string;
+  token?: string;
+  user?: {
+    id: string;
+    username: string;
+    email: string;
+    status?: string;
+    avatar?: string;
+    privacySettings?: any;
+  };
+}
+
 const router = useRouter();
 const loginFormRef = ref<FormInstance | null>(null);
 const userStore = useUserStore();
@@ -63,14 +78,19 @@ const handleLogin = () => {
     if (valid) {
       try {
         const { username, password } = loginForm;
-        const response = await login(username, password);
+        const response = (await login(username, password)) as LoginResponse;
 
-        if (response.success) {
+        if (response.success && response.token && response.user) {
+          // 确保用户对象和token存在
           const { token, user } = response;
           localStorage.setItem("token", token);
           localStorage.setItem("user", JSON.stringify(user));
+
           userStore.setToken(token);
           userStore.setUserInfo(user);
+
+          // 设置用户在线状态
+          userStore.setStatus("online");
 
           // 初始化Socket.IO连接
           socketService.init();
@@ -92,7 +112,7 @@ const handleLogin = () => {
 // 检测是否登录过，如果是则自动跳转到首页
 const handleAutoLogin = async () => {
   try {
-    const response = await getLoginStatus();
+    const response = (await getLoginStatus()) as any;
     if (response.success) {
       router.replace("/home");
     }

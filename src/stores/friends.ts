@@ -243,16 +243,23 @@ export const useFriendsStore = defineStore("friends", {
       status,
     }: {
       userId: string;
-      status: "online" | "offline";
+      status: "online" | "offline" | "away" | "busy";
     }) {
+      console.log(`更新好友状态: ${userId} => ${status}`);
+
       // 更新好友状态
       const friend = this.friends.find((f) => f._id === userId);
       if (friend) {
         friend.status = status;
+
+        // 更新最后活动时间
+        friend.lastActive = new Date().toISOString();
+      } else {
+        console.warn(`未找到ID为 ${userId} 的好友，无法更新状态`);
       }
 
-      // 更新在线好友列表
-      if (status === "online") {
+      // 更新在线好友列表 - 除离线外的所有状态都算在线
+      if (status !== "offline") {
         if (!this.onlineFriends.includes(userId)) {
           this.onlineFriends.push(userId);
         }

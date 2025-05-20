@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-27 13:28:10
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-08 15:21:28
+ * @LastEditTime: 2025-05-20 17:02:59
 -->
 <template>
   <div class="groups-container">
@@ -13,25 +13,18 @@
       <!-- 搜索框 -->
       <searchInput v-model="searchText" :searchType="2"></searchInput>
 
-      <!-- 创建群组按钮 -->
-      <div class="create-group">
-        <el-button type="primary" size="small" @click="handleCreateGroup"
-          >创建群组</el-button
-        >
-      </div>
-
-      <!-- 群组列表 -->
+      <!-- 我的群组列表 -->
       <div class="list-container">
-        <div class="list-header">群组列表</div>
+        <div class="list-header">我的群组</div>
         <div v-if="loading" class="loading-container">
           <el-spinner>加载中...</el-spinner>
         </div>
-        <div v-else-if="groupsList.length === 0" class="empty-container">
+        <div v-else-if="myGroups.length === 0" class="empty-container">
           暂无群组，请创建或加入群组
         </div>
         <div
           v-else
-          v-for="group in filteredGroups"
+          v-for="group in filteredMyGroups"
           :key="group._id"
           :class="['list-item', currentGroupId === group._id ? 'active' : '']"
           @click="handleSelect(group._id)"
@@ -41,6 +34,45 @@
             <div class="item-name">{{ group.name }}</div>
             <div class="item-status">{{ group.members?.length || 0 }}人</div>
           </div>
+        </div>
+      </div>
+
+      <!-- 公开群组列表 -->
+      <div class="list-container">
+        <div class="list-header">公开群组</div>
+        <div v-if="loadingPublic" class="loading-container">
+          <el-spinner>加载中...</el-spinner>
+        </div>
+        <div v-else-if="publicGroups.length === 0" class="empty-container">
+          暂无公开群组
+        </div>
+        <div
+          v-else
+          v-for="group in filteredPublicGroups"
+          :key="group._id"
+          class="list-item"
+        >
+          <el-avatar :size="40" :src="group.avatar" shape="square" />
+          <div class="item-info">
+            <div class="item-name">{{ group.name }}</div>
+            <div class="item-status">{{ group.members?.length || 0 }}人</div>
+          </div>
+          <el-button
+            v-if="!group.isJoined"
+            type="primary"
+            size="small"
+            @click.stop="handleJoinGroup(group._id)"
+          >
+            加入
+          </el-button>
+          <el-button
+            v-else
+            type="success"
+            size="small"
+            @click.stop="handleSelect(group._id)"
+          >
+            进入
+          </el-button>
         </div>
       </div>
     </div>
@@ -58,14 +90,42 @@ import { useRouter } from "vue-router";
 import { useGroupStore } from "@/stores/group";
 import { ElMessage } from "element-plus";
 import searchInput from "@/components/home/input/searchInput.vue";
+import { getPublicGroupsApi, joinPublicGroupApi } from "@/api/group";
+
+interface GroupMember {
+  user: {
+    _id: string;
+    username: string;
+    avatar: string;
+  };
+  role: string;
+  joinedAt: string;
+}
+
+interface Group {
+  _id: string;
+  name: string;
+  description: string;
+  avatar: string;
+  creator: {
+    _id: string;
+    username: string;
+    avatar: string;
+  };
+  members: GroupMember[];
+  isPrivate: boolean;
+  isJoined?: boolean;
+}
 
 const router = useRouter();
 const groupStore = useGroupStore();
 const searchText = ref("");
 const loading = ref(false);
+const loadingPublic = ref(false);
+const publicGroups = ref<Group[]>([]);
 
-// 计算过滤后的群组列表
-const filteredGroups = computed(() => {
+// 计算过滤后的我的群组列表
+const filteredMyGroups = computed(() => {
   if (!searchText.value) return groupStore.allGroups;
 
   return groupStore.allGroups.filter((group) =>
@@ -73,13 +133,22 @@ const filteredGroups = computed(() => {
   );
 });
 
+// 计算过滤后的公开群组列表
+const filteredPublicGroups = computed(() => {
+  if (!searchText.value) return publicGroups.value;
+
+  return publicGroups.value.filter((group) =>
+    group.name.toLowerCase().includes(searchText.value.toLowerCase())
+  );
+});
+
 // 获取当前选中的群组ID
 const currentGroupId = computed(() => groupStore.currentGroupId);
 
-// 获取所有群组
-const groupsList = computed(() => groupStore.allGroups);
+// 获取我的群组列表
+const myGroups = computed(() => groupStore.allGroups);
 
-// 加载群组列表
+// 加载我的群组列表
 const loadGroups = async () => {
   loading.value = true;
   try {
@@ -92,23 +161,46 @@ const loadGroups = async () => {
   }
 };
 
-// 创建新群组
-const handleCreateGroup = () => {
-  ElMessage.info("创建群组功能将在下个版本开放");
-  // 这里可以打开创建群组的对话框
-  // 如果后期实现，可以调用groupStore.createGroup方法
+// 加载公开群组列表
+const loadPublicGroups = async () => {
+  loadingPublic.value = true;
+  try {
+    const response = await getPublicGroupsApi();
+    publicGroups.value = response;
+  } catch (error) {
+    console.error("加载公开群组失败:", error);
+    ElMessage.error("加载公开群组失败，请刷新页面重试");
+  } finally {
+    loadingPublic.value = false;
+  }
 };
 
 // 选择群组
 const handleSelect = (groupId: string) => {
   groupStore.setCurrentGroup(groupId);
-  // 导航到群组聊天页面
   router.push(`/group/${groupId}`);
+};
+
+// 加入群组
+const handleJoinGroup = async (groupId: string) => {
+  try {
+    await joinPublicGroupApi(groupId);
+    ElMessage.success("成功加入群组");
+    // 重新加载群组列表
+    await loadGroups();
+    await loadPublicGroups();
+    // 自动进入群组
+    handleSelect(groupId);
+  } catch (error: any) {
+    console.error("加入群组失败:", error);
+    ElMessage.error(error.response?.data?.message || "加入群组失败，请重试");
+  }
 };
 
 // 组件挂载时加载群组列表
 onMounted(() => {
   loadGroups();
+  loadPublicGroups();
 });
 </script>
 
@@ -157,6 +249,7 @@ onMounted(() => {
   .list-container {
     flex: 1;
     overflow-y: auto;
+    padding-bottom: 10px;
 
     .list-header {
       padding: 12px 10px 6px;
@@ -213,6 +306,10 @@ onMounted(() => {
           overflow: hidden;
           text-overflow: ellipsis;
         }
+      }
+
+      .el-button {
+        margin-left: 8px;
       }
     }
   }

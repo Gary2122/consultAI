@@ -1,4 +1,5 @@
 import axios from "axios";
+import request from "@/utils/request";
 
 // API基础URL
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
@@ -130,6 +131,22 @@ export const getGroupMessages = async (groupId: string) => {
     }
   );
   return response.data;
+};
+
+// 获取公共群组
+export const getPublicGroupsApi = async () => {
+  return request({
+    url: "/api/groups/public",
+    method: "get",
+  });
+};
+
+// 加入公共群组
+export const joinPublicGroupApi = async (groupId: string) => {
+  return request({
+    url: `/api/groups/${groupId}/join`,
+    method: "post",
+  });
 };
 
 export default {

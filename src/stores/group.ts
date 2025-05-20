@@ -104,6 +104,7 @@ export const useGroupStore = defineStore("group", {
       try {
         if (this.groups.length === 0) {
           const groups = await groupApi.getUserGroups();
+          console.log("groups", groups);
           this.groups = groups;
         }
         return this.groups;
@@ -274,6 +275,11 @@ export const useGroupStore = defineStore("group", {
       this.error = null;
 
       try {
+        // 检查用户是否已登录
+        if (!userStore.userId || !userStore.username) {
+          throw new Error("用户未登录或登录信息不完整");
+        }
+
         // 检查当前群组是否存在
         const group = this.groups.find((g) => g._id === groupId);
         if (!group) {
@@ -282,16 +288,18 @@ export const useGroupStore = defineStore("group", {
 
         // 检查用户是否是群组成员
         const isMember = group.members.some(
-          (m) => m.user._id === userStore.userId
+          (m) => m.user && m.user._id && m.user._id === userStore.userId
         );
         if (!isMember) {
           throw new Error("您不是该群组的成员");
         }
 
-        // 确保用户ID有效
-        if (!userStore.userId) {
-          throw new Error("用户未登录");
-        }
+        console.log("User info:", {
+          userId: userStore.userId,
+          username: userStore.username,
+        });
+        console.log("Group info:", group);
+        console.log("Is member:", isMember);
 
         // 创建临时消息(未发送状态)
         const tempMessage = {
@@ -302,7 +310,7 @@ export const useGroupStore = defineStore("group", {
           createdAt: new Date().toISOString(),
           read: false,
           messageType: contentType,
-          sender: isAnonymous ? "匿名用户" : userStore.username || "我",
+          sender: isAnonymous ? "匿名用户" : userStore.username,
           avatar: isAnonymous ? "" : userStore.avatar || "",
           fileUrl,
           isDeleted: false,

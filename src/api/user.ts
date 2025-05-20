@@ -30,6 +30,11 @@ export const getLoginStatus = () => {
   return request.get("/users/check-auth");
 };
 
+// 用户登出
+export const logout = () => {
+  return request.post("/users/logout");
+};
+
 // 获取用户资料 (可选参数userId，不提供则获取自己的资料)
 export const getUserProfile = (userId?: string) => {
   const url = userId ? `/api/users/profile/${userId}` : "/api/users/profile";
@@ -39,6 +44,19 @@ export const getUserProfile = (userId?: string) => {
 // 更新用户资料
 export const updateUserProfile = (profileData: any) => {
   return request.put("/api/users/profile", profileData);
+};
+
+// 更新用户在线状态
+export const updateUserStatus = (status: string, visibility?: string) => {
+  return request.put("/api/users/status", {
+    status,
+    visibility,
+  });
+};
+
+// 获取用户在线状态
+export const getUserStatus = (userId: string) => {
+  return request.get(`/api/users/${userId}/status`);
 };
 
 // 添加用户活动记录

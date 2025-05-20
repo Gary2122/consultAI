@@ -7,87 +7,89 @@
  * @LastEditTime: 2025-05-08 13:59:20
 -->
 <template>
-  <div class="list-item">
-    <el-avatar :size="40" :src="props.friend.avatar" />
-    <div class="item-info">
-      <div class="item-name">{{ props.friend.username }}</div>
-      <div class="item-status">
-        {{ props.friend.online ? "在线" : "离线/隐藏" }}
-      </div>
+  <div class="friend-item">
+    <div class="avatar-container">
+      <el-avatar :size="40" :src="friend.avatar" class="avatar"></el-avatar>
+      <StatusIndicator
+        :status="friend.status"
+        size="medium"
+        class="status-indicator"
+      />
     </div>
-    <div
-      class="status-dot"
-      :class="props.friend.online ? 'online' : 'offline'"
-    ></div>
+    <div class="friend-info">
+      <div class="friend-name">{{ friend.username }}</div>
+      <div class="friend-status">{{ statusText }}</div>
+    </div>
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
+import { computed } from "vue";
+import StatusIndicator from "./StatusIndicator.vue";
+
 const props = defineProps({
   friend: {
     type: Object,
-    default: () => ({
-      id: 0,
-      name: "",
-      avatar: "",
-      status: "",
-      online: false,
-    }),
+    required: true,
   },
+});
+
+// 状态文本
+const statusText = computed(() => {
+  const statusMap = {
+    online: "在线",
+    away: "离开",
+    busy: "勿扰",
+    offline: "离线",
+  };
+  return statusMap[props.friend.status] || "离线";
 });
 </script>
 
-<style scoped lang="scss">
-.list-item {
+<style lang="scss" scoped>
+.friend-item {
   display: flex;
   align-items: center;
-  padding: 8px 10px;
+  padding: 10px 16px;
   cursor: pointer;
   transition: background-color 0.2s;
-  border-radius: 4px;
-  margin: 0 6px;
 
   &:hover {
     background-color: rgba(79, 84, 92, 0.16);
   }
 
-  &.active {
-    background-color: rgba(79, 84, 92, 0.32);
+  .avatar-container {
+    position: relative;
+    margin-right: 12px;
+
+    .avatar {
+      background-color: #99aab5;
+    }
+
+    .status-indicator {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      border: 2px solid var(--color-bg-main);
+    }
   }
-  .item-info {
-    margin-left: 10px;
+
+  .friend-info {
     flex: 1;
     min-width: 0;
 
-    .item-name {
+    .friend-name {
       font-weight: 500;
-      font-size: 14px;
+      color: #fff;
+      margin-bottom: 2px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .item-status {
+    .friend-status {
       font-size: 12px;
       color: #b9bbbe;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-  }
-
-  .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-left: 5px;
-
-    &.online {
-      background-color: #3ba55d;
-    }
-
-    &.offline {
-      background-color: #747f8d;
     }
   }
 }
