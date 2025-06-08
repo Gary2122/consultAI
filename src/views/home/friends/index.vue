@@ -183,7 +183,7 @@ onMounted(() => {
     padding: 16px 10px;
 
     :deep(.el-input__inner) {
-      background-color: #202225;
+      background-color: var(--color-bg-main);
       border: none;
       color: #dcddde;
       border-radius: 4px;

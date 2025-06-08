@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-14 19:34:51
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-15 13:01:50
+ * @LastEditTime: 2025-05-23 11:54:59
 -->
 <template>
   <div class="chat-container overflow-hidden h-full">
@@ -761,13 +761,13 @@ onBeforeUnmount(() => {
         margin-left: 12px;
         font-weight: 600;
         font-size: 16px;
-        color: white;
+        color: var(--color-text-normal);
       }
 
       .chat-status {
         margin-left: 12px;
         font-size: 12px;
-        color: #b9bbbe;
+        color: var(--color-text-muted);
       }
     }
 
@@ -777,11 +777,11 @@ onBeforeUnmount(() => {
 
       i {
         font-size: 20px;
-        color: #b9bbbe;
+        color: var(--color-text-muted);
         cursor: pointer;
 
         &:hover {
-          color: white;
+          color: var(--color-text-normal);
         }
       }
     }
@@ -886,7 +886,7 @@ onBeforeUnmount(() => {
           .message-name {
             font-weight: 500;
             font-size: 14px;
-            color: white;
+            color: var(--color-text-normal);
             margin-right: 8px;
           }
 

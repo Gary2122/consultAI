@@ -30,13 +30,13 @@
     </div>
 
     <div class="userInfo flex-cc pr-20">
-      <modelSelectBtn />
+      <!-- <modelSelectBtn /> -->
       <!-- <div class="flex-cc">
         <nav>功能1</nav>
         <nav>功能2</nav>
         <nav>功能3</nav>
       </div> -->
-      <div class="ml-20 mr-15">头像</div>
+      <!-- <div class="ml-20 mr-15">头像</div> -->
     </div>
   </header>
 </template>

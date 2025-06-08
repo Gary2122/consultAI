@@ -4,22 +4,22 @@
  * @Author: Garrison
  * @Date: 2025-05-08 14:04:48
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-08 15:19:37
+ * @LastEditTime: 2025-06-08 16:06:13
 -->
 <template>
   <div class="search-box">
     <el-input
       v-model="searchText"
       :placeholder="`搜索${props.searchType === 1 ? '好友' : '群组'}`"
-      prefix-icon="el-icon-search"
+      :prefix-icon="Search"
       clearable
-      @input="changeSearchText"
     />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { defineModel } from "vue";
+import { Search } from "@element-plus/icons-vue";
 const searchText = defineModel();
 const props = defineProps({
   searchType: {
@@ -34,7 +34,7 @@ const props = defineProps({
   padding: 16px 10px;
 
   :deep(.el-input__inner) {
-    background-color: #202225;
+    background-color: var(--color-bg-main);
     border: none;
     color: #dcddde;
     border-radius: 4px;

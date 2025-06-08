@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-28 14:25:41
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-17 20:08:00
+ * @LastEditTime: 2025-05-23 12:07:52
 -->
 <template>
   <div class="ai-chat-container">
@@ -647,7 +647,7 @@ onMounted(async () => {
       }
 
       .message-content {
-        background-color: #40444b;
+        background-color: var(--color-bg-message);
         padding: 12px 16px;
         border-radius: 0 8px 8px 8px;
         max-width: 80%;
@@ -656,12 +656,12 @@ onMounted(async () => {
           font-weight: 500;
           font-size: 14px;
           margin-bottom: 4px;
-          color: white;
+          color: var(--color-text-normal);
 
           .message-time {
             font-weight: normal;
             font-size: 12px;
-            color: #72767d;
+            color: var(--color-text-muted);
             margin-left: 8px;
           }
         }

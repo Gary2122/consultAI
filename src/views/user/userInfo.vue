@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-05-06 11:27:30
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-16 15:23:27
+ * @LastEditTime: 2025-06-08 16:37:11
 -->
 <template>
   <div class="user-info-container">
@@ -103,7 +103,38 @@
           <div class="info-section">
             <h3 class="section-title">
               <i class="el-icon-collection-tag"></i>
-              心理标签
+              MBTI性格类型
+            </h3>
+            <div class="info-content">
+              <div v-if="userInfo.assessments" class="mbti-display">
+                <el-tag size="large" type="primary" effect="dark">
+                  {{ userInfo.assessments }}
+                </el-tag>
+                <div class="mbti-description">
+                  {{
+                    mbtiTypes.find((t) => t.value === userInfo.assessments)
+                      ?.description
+                  }}
+                </div>
+              </div>
+              <div class="empty-info" v-else>
+                <i class="el-icon-collection-tag"></i>
+                <span>暂无MBTI性格类型</span>
+                <el-button
+                  type="text"
+                  class="take-test-btn"
+                  @click="openEditDialog"
+                  >去测试</el-button
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- 性格标签 -->
+          <div class="info-section">
+            <h3 class="section-title">
+              <i class="el-icon-data-line"></i>
+              性格标签
             </h3>
             <div class="info-content">
               <div
@@ -121,52 +152,14 @@
                 </el-tag>
               </div>
               <div class="empty-info" v-else>
-                <i class="el-icon-collection-tag"></i>
-                <span>暂无心理标签</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 测评结果 -->
-          <div class="info-section">
-            <h3 class="section-title">
-              <i class="el-icon-data-line"></i>
-              测评结果
-            </h3>
-            <div class="info-content">
-              <div
-                class="assessment-list"
-                v-if="userInfo.assessments && userInfo.assessments.length > 0"
-              >
-                <div
-                  v-for="(assessment, index) in userInfo.assessments"
-                  :key="index"
-                  class="assessment-item"
-                >
-                  <div class="assessment-header">
-                    <span class="assessment-name">{{ assessment.name }}</span>
-                    <span class="assessment-date">{{
-                      formatDate(assessment.date)
-                    }}</span>
-                  </div>
-                  <div class="assessment-result">
-                    <el-progress
-                      :percentage="assessment.score"
-                      :color="getProgressColor(assessment.score)"
-                      :stroke-width="10"
-                      :show-text="false"
-                    ></el-progress>
-                    <span class="score-text">{{ assessment.score }}分</span>
-                  </div>
-                  <div class="assessment-desc">
-                    {{ assessment.description }}
-                  </div>
-                </div>
-              </div>
-              <div class="empty-info" v-else>
                 <i class="el-icon-data-line"></i>
-                <span>暂无测评结果</span>
-                <el-button type="text" class="take-test-btn">去测评</el-button>
+                <span>暂无性格标签</span>
+                <el-button
+                  type="text"
+                  class="take-test-btn"
+                  @click="openEditDialog"
+                  >去添加</el-button
+                >
               </div>
             </div>
           </div>
@@ -270,6 +263,52 @@
         </div>
       </div>
     </div>
+
+    <!-- 编辑MBTI和标签的对话框 -->
+    <el-dialog v-model="showEditDialog" title="编辑性格标签" width="500px">
+      <div class="edit-dialog-content">
+        <div class="mbti-section">
+          <h4>MBTI性格类型</h4>
+          <el-select v-model="editingMBTI" placeholder="选择你的MBTI类型">
+            <el-option
+              v-for="type in mbtiTypes"
+              :key="type.value"
+              :label="`${type.value} - ${type.label}`"
+              :value="type.value"
+            >
+              <span>{{ type.value }} - {{ type.label }}</span>
+              <span class="mbti-description">{{ type.description }}</span>
+            </el-option>
+          </el-select>
+        </div>
+
+        <div class="tags-section">
+          <h4>性格标签</h4>
+          <el-select
+            v-model="editingTags"
+            multiple
+            collapse-tags
+            placeholder="选择性格标签"
+          >
+            <el-option
+              v-for="tag in personalityTags"
+              :key="tag.name"
+              :label="tag.name"
+              :value="tag.name"
+            >
+              <el-tag :type="tag.type">{{ tag.name }}</el-tag>
+            </el-option>
+          </el-select>
+        </div>
+      </div>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showEditDialog = false">取消</el-button>
+          <el-button type="primary" @click="saveMBTIAndTags">保存</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -278,13 +317,90 @@ import { reactive, computed, onMounted, ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import dayjs from "dayjs";
 import { useUserStore } from "@/stores/user";
-import { getUserProfile } from "@/api/user";
+import { getUserProfile, updateUserProfile } from "@/api/user";
 import { ElMessage, ElLoading } from "element-plus";
 
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
 const loading = ref(false);
+
+// MBTI类型定义
+const mbtiTypes = [
+  {
+    value: "ISTJ",
+    label: "检查者",
+    description: "安静、严肃、通过全面性和可靠性获得成功",
+  },
+  { value: "ISFJ", label: "守护者", description: "安静、友善、有责任心和谨慎" },
+  {
+    value: "INFJ",
+    label: "提倡者",
+    description: "寻求意义和联系，想要了解什么能够激励别人",
+  },
+  {
+    value: "INTJ",
+    label: "建筑师",
+    description: "在实现自己的想法和达成自己的目标时有创新的想法和非凡的动力",
+  },
+  {
+    value: "ISTP",
+    label: "鉴赏家",
+    description:
+      "灵活和宽容，安静地观察直到问题出现，然后迅速行动找到可行的解决方案",
+  },
+  { value: "ISFP", label: "探险家", description: "安静、友善、敏感和善良" },
+  {
+    value: "INFP",
+    label: "调停者",
+    description: "理想主义者，忠于自己的价值观和自己所重视的人",
+  },
+  {
+    value: "INTP",
+    label: "学者",
+    description: "追求自己的兴趣，有逻辑性和创造力",
+  },
+  {
+    value: "ESTP",
+    label: "企业家",
+    description: "灵活、宽容，采用实用的方法解决问题",
+  },
+  { value: "ESFP", label: "表演者", description: "外向、友善、接受性强" },
+  { value: "ENFP", label: "竞选者", description: "热情洋溢、富有想象力" },
+  {
+    value: "ENTP",
+    label: "辩论家",
+    description: "反应快、睿智，能够应对各种挑战",
+  },
+  {
+    value: "ESTJ",
+    label: "总经理",
+    description: "实际、现实主义者，具有企业或机械方面的天赋",
+  },
+  { value: "ESFJ", label: "执政官", description: "热心肠、有责任心、合作性强" },
+  {
+    value: "ENFJ",
+    label: "主人公",
+    description: "热情、为他人着想、反应敏捷、负责任",
+  },
+  { value: "ENTJ", label: "指挥官", description: "坦诚、果断，天生的领导者" },
+];
+
+// 性格标签定义
+const personalityTags = [
+  { name: "开朗", type: "success" },
+  { name: "内向", type: "info" },
+  { name: "乐观", type: "success" },
+  { name: "谨慎", type: "warning" },
+  { name: "幽默", type: "primary" },
+  { name: "理性", type: "info" },
+  { name: "感性", type: "danger" },
+  { name: "独立", type: "primary" },
+  { name: "合群", type: "success" },
+  { name: "创新", type: "warning" },
+  { name: "传统", type: "info" },
+  { name: "冒险", type: "danger" },
+];
 
 // 性别映射
 const genderMap = {
@@ -304,8 +420,8 @@ const userInfo = reactive({
   gender: "",
   birthday: "",
   location: "",
-  tags: [],
-  assessments: [],
+  tags: [] as { name: string; type: string }[],
+  assessments: "",
   stats: {
     friends: 0,
     groups: 0,
@@ -314,8 +430,47 @@ const userInfo = reactive({
   },
   activities: [],
   friends: [],
-  isFriend: false, // 如果查看的是他人
+  isFriend: false,
 });
+
+// 编辑MBTI和标签的对话框
+const showEditDialog = ref(false);
+const editingMBTI = ref("");
+const editingTags = ref<string[]>([]);
+
+// 打开编辑对话框
+const openEditDialog = () => {
+  editingMBTI.value = userInfo.assessments;
+  editingTags.value = userInfo.tags.map((tag) => tag.name);
+  showEditDialog.value = true;
+};
+
+// 保存MBTI和标签
+const saveMBTIAndTags = async () => {
+  try {
+    // 更新用户信息
+    userInfo.assessments = editingMBTI.value;
+    userInfo.tags = editingTags.value.map((tagName) => {
+      const tag = personalityTags.find((t) => t.name === tagName);
+      return {
+        name: tagName,
+        type: tag ? tag.type : "primary",
+      };
+    });
+
+    // 调用API保存更新
+    await updateUserProfile({
+      assessments: userInfo.assessments,
+      tags: userInfo.tags,
+    });
+
+    showEditDialog.value = false;
+    ElMessage.success("更新成功");
+  } catch (error) {
+    console.error("保存失败:", error);
+    ElMessage.error("保存失败");
+  }
+};
 
 // 加载用户信息
 const loadUserProfile = async () => {
@@ -339,7 +494,7 @@ const loadUserProfile = async () => {
       userInfo.birthday = userData.birthday;
       userInfo.location = userData.location;
       userInfo.tags = userData.tags || [];
-      userInfo.assessments = userData.assessments || [];
+      userInfo.assessments = userData.assessments || "";
       userInfo.stats = userData.stats || {
         friends: 0,
         groups: 0,
@@ -654,13 +809,34 @@ onMounted(() => {
   }
 }
 
+.mbti-display {
+  text-align: center;
+  padding: 10px 0;
+
+  .el-tag {
+    font-size: 18px;
+    padding: 8px 16px;
+    margin-bottom: 10px;
+  }
+
+  .mbti-description {
+    color: var(--color-text-muted);
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 10px;
+  }
+}
+
 .tags-container {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  padding: 10px 0;
 
   .user-tag {
     margin-right: 0;
+    font-size: 14px;
+    padding: 6px 12px;
   }
 }
 
@@ -851,6 +1027,36 @@ onMounted(() => {
   &:focus {
     background-color: #4752c4;
     border-color: #4752c4;
+  }
+}
+
+.edit-dialog-content {
+  .mbti-section,
+  .tags-section {
+    margin-bottom: 20px;
+
+    h4 {
+      margin-bottom: 10px;
+      color: var(--color-text-normal);
+    }
+  }
+
+  .mbti-description {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-left: 10px;
+  }
+}
+
+:deep(.el-select-dropdown__item) {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+
+  .mbti-description {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-top: 4px;
   }
 }
 </style>
