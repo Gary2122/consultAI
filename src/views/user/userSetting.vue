@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-30 16:12:37
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-16 14:01:23
+ * @LastEditTime: 2025-06-11 10:43:50
 -->
 <template>
   <div class="user-settings-container">
@@ -64,12 +64,29 @@
         <h3 class="section-title">个人资料</h3>
         <div class="avatar-section">
           <div class="avatar-container">
-            <el-avatar :size="100" :src="userInfo.avatar"></el-avatar>
-            <div class="avatar-overlay">
-              <i class="el-icon-edit"></i>
-            </div>
+            <el-upload
+              class="avatar-uploader"
+              action="http://localhost:3000/api/users/profile/avatar"
+              :headers="uploadHeaders"
+              :show-file-list="false"
+              :on-success="handleAvatarSuccess"
+              :before-upload="beforeAvatarUpload"
+              :on-error="handleAvatarError"
+              accept="image/jpeg,image/png"
+              name="avatar"
+            >
+              <div class="avatar-wrapper">
+                <el-avatar :size="100" :src="userInfo.avatar"></el-avatar>
+                <div class="avatar-overlay">
+                  <i class="el-icon-camera"></i>
+                  <span>更换头像</span>
+                </div>
+              </div>
+            </el-upload>
           </div>
-          <el-button type="primary" plain size="small">更换头像</el-button>
+          <div class="avatar-tips">
+            <p>支持 jpg、png 格式，文件小于 5MB</p>
+          </div>
         </div>
 
         <el-form
@@ -450,12 +467,13 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, computed } from "vue";
 import { ElMessage } from "element-plus";
 import { getUserProfile, updateUserProfile } from "@/api/user";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import { useThemeStore } from "@/stores/theme";
+import type { UploadProps } from "element-plus";
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -527,6 +545,11 @@ const passwordForm = reactive({
   newPassword: "",
   confirmPassword: "",
 });
+
+// 上传相关
+const uploadHeaders = computed(() => ({
+  Authorization: `Bearer ${userStore.token}`,
+}));
 
 // 菜单选择处理
 const handleMenuSelect = (index: string) => {
@@ -637,7 +660,7 @@ const handleLogout = () => {
   ElMessage.success("退出登录成功");
 
   // 跳转到登录页
-  router.push("/user/login");
+  router.push("/login");
 };
 
 // 页面加载时获取用户资料
@@ -648,6 +671,58 @@ onMounted(async () => {
 // 设置主题
 const setTheme = (theme: ThemeType) => {
   themeStore.setTheme(theme);
+};
+
+// 上传相关
+const handleAvatarSuccess: UploadProps["onSuccess"] = (response) => {
+  if (response.success) {
+    userInfo.avatar = response.data.avatarUrl;
+    // 更新用户store中的头像
+    userStore.updateAvatar(response.data.avatarUrl);
+    ElMessage.success("头像更新成功");
+  } else {
+    ElMessage.error(response.message || "头像更新失败");
+  }
+};
+
+const handleAvatarError: UploadProps["onError"] = (error) => {
+  console.error("Avatar upload error:", error);
+  let errorMessage = "头像上传失败，请稍后重试";
+
+  if (error.response) {
+    try {
+      const response = JSON.parse(error.response);
+      errorMessage = response.message || errorMessage;
+    } catch (e) {
+      // 如果是 MulterError，直接显示错误信息
+      if (error.message && error.message.includes("MulterError")) {
+        errorMessage = "文件上传失败，请确保选择了正确的图片文件";
+      }
+      console.error("Error parsing error response:", e);
+    }
+  }
+
+  ElMessage.error(errorMessage);
+};
+
+const beforeAvatarUpload: UploadProps["beforeUpload"] = (file) => {
+  // 检查文件类型
+  const isImage = file.type.startsWith("image/");
+  const isValidFormat = ["image/jpeg", "image/png"].includes(file.type);
+
+  if (!isImage || !isValidFormat) {
+    ElMessage.error("只支持上传 jpg/png 格式的图片!");
+    return false;
+  }
+
+  // 检查文件大小（5MB）
+  const isLt5M = file.size / 1024 / 1024 < 5;
+  if (!isLt5M) {
+    ElMessage.error("图片大小不能超过 5MB!");
+    return false;
+  }
+
+  return true;
 };
 </script>
 
@@ -757,39 +832,56 @@ const setTheme = (theme: ThemeType) => {
   }
 
   .avatar-section {
+    margin: 20px 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 24px;
 
     .avatar-container {
       position: relative;
-      margin-bottom: 16px;
-      cursor: pointer;
+      margin-bottom: 15px;
 
-      .avatar-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+      .avatar-wrapper {
+        position: relative;
+        cursor: pointer;
         border-radius: 50%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.2s;
+        overflow: hidden;
 
-        i {
-          font-size: 24px;
+        .avatar-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
           color: white;
+          transition: background-color 0.3s;
+          opacity: 0;
+
+          i {
+            font-size: 24px;
+            margin-bottom: 5px;
+          }
+
+          span {
+            font-size: 12px;
+          }
+        }
+
+        &:hover .avatar-overlay {
+          background-color: rgba(0, 0, 0, 0.5);
+          opacity: 1;
         }
       }
+    }
 
-      &:hover .avatar-overlay {
-        opacity: 1;
-      }
+    .avatar-tips {
+      color: var(--color-text-muted);
+      font-size: 12px;
     }
   }
 
@@ -979,5 +1071,11 @@ const setTheme = (theme: ThemeType) => {
     border: none;
     color: var(--color-input-text);
   }
+}
+
+:deep(.el-upload) {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
 }
 </style>

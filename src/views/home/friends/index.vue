@@ -201,7 +201,6 @@ onMounted(() => {
   .list-container {
     flex: 1;
     overflow-y: auto;
-
     .list-header {
       padding: 12px 10px 6px;
       color: #72767d;
@@ -215,6 +214,7 @@ onMounted(() => {
 .friends-right {
   flex: 1;
   background-color: var(--color-bg-main);
+  // background-color: var(--color-list-item-bg);
   display: flex;
   flex-direction: column;
 }

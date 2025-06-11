@@ -16,6 +16,7 @@ export interface UserState {
     allowAIAnalysis: boolean;
   } | null;
   isLoggedIn: boolean;
+  anonymousName: string;
 }
 
 export const useUserStore = defineStore("user", {
@@ -27,6 +28,7 @@ export const useUserStore = defineStore("user", {
     status: "offline",
     privacySettings: null,
     isLoggedIn: false,
+    anonymousName: "",
   }),
 
   getters: {
@@ -42,6 +44,7 @@ export const useUserStore = defineStore("user", {
         username: state.username,
         avatar: state.avatar,
         status: state.status,
+        anonymousName: state.anonymousName,
         privacySettings: state.privacySettings,
       };
     },
@@ -94,6 +97,9 @@ export const useUserStore = defineStore("user", {
       this.userId = userInfo.id;
       this.username = userInfo.username;
       this.avatar = userInfo.avatar;
+      this.anonymousName = userInfo.anonymousName;
+      console.log(userInfo.anonymousName, this.anonymousName);
+      console.log(userInfo);
 
       // 添加状态和隐私设置
       if (userInfo.status) {
@@ -115,6 +121,7 @@ export const useUserStore = defineStore("user", {
           avatar: this.avatar,
           status: this.status,
           privacySettings: this.privacySettings,
+          anonymousName: this.anonymousName,
         })
       );
     },
@@ -133,6 +140,7 @@ export const useUserStore = defineStore("user", {
 
         // 更新本地存储
         const userDataStr = localStorage.getItem("user");
+        console.log("userDataStr", userDataStr);
         if (userDataStr) {
           const userData = JSON.parse(userDataStr);
           userData.status = status;
@@ -175,6 +183,19 @@ export const useUserStore = defineStore("user", {
       if (userDataStr) {
         const userData = JSON.parse(userDataStr);
         userData.privacySettings = this.privacySettings;
+        localStorage.setItem("user", JSON.stringify(userData));
+      }
+    },
+
+    // 更新头像
+    updateAvatar(avatarUrl: string) {
+      this.avatar = avatarUrl;
+
+      // 更新本地存储
+      const userDataStr = localStorage.getItem("user");
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        userData.avatar = avatarUrl;
         localStorage.setItem("user", JSON.stringify(userData));
       }
     },

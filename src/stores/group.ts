@@ -300,6 +300,7 @@ export const useGroupStore = defineStore("group", {
         });
         console.log("Group info:", group);
         console.log("Is member:", isMember);
+        console.log("anonymousName", userStore.anonymousName);
 
         // 创建临时消息(未发送状态)
         const tempMessage = {
@@ -310,7 +311,7 @@ export const useGroupStore = defineStore("group", {
           createdAt: new Date().toISOString(),
           read: false,
           messageType: contentType,
-          sender: isAnonymous ? "匿名用户" : userStore.username,
+          sender: isAnonymous ? userStore.anonymousName : userStore.username,
           avatar: isAnonymous ? "" : userStore.avatar || "",
           fileUrl,
           isDeleted: false,
@@ -319,6 +320,13 @@ export const useGroupStore = defineStore("group", {
           pending: true,
           isGroupMessage: true,
           isAnonymous,
+          senderInfo: {
+            _id: userStore.userId,
+            username: isAnonymous
+              ? userStore.anonymousName
+              : userStore.username,
+            avatar: isAnonymous ? "" : userStore.avatar || "",
+          },
         };
 
         // 添加临时消息到聊天记录
@@ -331,7 +339,8 @@ export const useGroupStore = defineStore("group", {
           contentType,
           fileUrl,
           null,
-          isAnonymous
+          isAnonymous,
+          userStore.anonymousName
         );
 
         if (!result) {

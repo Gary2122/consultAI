@@ -53,7 +53,8 @@ const statusText = computed(() => {
   padding: 10px 16px;
   cursor: pointer;
   transition: background-color 0.2s;
-
+  background-color: var(--color-list-item-bg);
+  border-radius: 6px;
   &:hover {
     background-color: rgba(79, 84, 92, 0.16);
   }

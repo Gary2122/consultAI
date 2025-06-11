@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import * as api from "@/api/forum";
 import { ApiResponse } from "@/utils/request";
+import { da } from "element-plus/es/locale/index.mjs";
 
 // 标签接口
 export interface Tag {
@@ -300,25 +301,40 @@ export const useForumStore = defineStore("forum", {
         const response = await api.likePost(postId);
 
         if (response.success) {
+          const { data } = response;
           // 更新当前帖子
           if (this.currentPost && this.currentPost._id === postId) {
-            this.currentPost.likes += 1;
+            if (data.liked) {
+              this.currentPost.likes += 1;
+            } else {
+              this.currentPost.likes -= 1;
+            }
           }
 
           // 更新帖子列表中的帖子
           const post = this.posts.find((p) => p._id === postId);
           if (post) {
-            post.likes += 1;
+            if (data.liked) {
+              post.likes += 1;
+            } else {
+              post.likes -= 1;
+            }
           }
 
-          return true;
+          return {
+            success: true,
+            message: data.liked ? "点赞成功" : "取消点赞成功",
+          };
         } else {
           throw new Error(response.message || "点赞失败");
         }
       } catch (error: any) {
         console.error("点赞失败:", error);
         this.error = error.message;
-        return false;
+        return {
+          success: false,
+          message: "点赞失败",
+        };
       }
     },
 
@@ -400,9 +416,9 @@ export const useForumStore = defineStore("forum", {
         const response = shouldRefresh
           ? await api.getPostCommentsWithoutCache(postId, { page, limit })
           : await api.getPostComments(postId, { page, limit });
-
+        console.log(response);
         if (response.success) {
-          this.comments = response.data.comments;
+          this.comments = response.data;
           this.lastCommentsUpdate = {
             ...this.lastCommentsUpdate,
             [postId]: now,
@@ -441,21 +457,26 @@ export const useForumStore = defineStore("forum", {
         };
 
         const response = await api.createComment(postId, apiCommentData as any);
-
+        console.log(response);
         if (response.success) {
-          // 添加新评论到列表
-          this.comments.unshift(response.data);
+          // // 确保comments数组已初始化
+          // if (!Array.isArray(this.comments)) {
+          //   this.comments = [];
+          // }
+          // console.log(response.data, this.comments);
+          // // 添加新评论到列表
+          // this.comments.unshift(response.data);
 
-          // 更新帖子评论数量
-          if (this.currentPost && this.currentPost._id === postId) {
-            this.currentPost.commentCount += 1;
-          }
+          // // 更新帖子评论数量
+          // if (this.currentPost && this.currentPost._id === postId) {
+          //   this.currentPost.commentCount += 1;
+          // }
 
-          // 更新帖子列表中的评论数量
-          const post = this.posts.find((p) => p._id === postId);
-          if (post) {
-            post.commentCount += 1;
-          }
+          // // 更新帖子列表中的评论数量
+          // const post = this.posts.find((p) => p._id === postId);
+          // if (post) {
+          //   post.commentCount += 1;
+          // }
 
           return response.data;
         } else {

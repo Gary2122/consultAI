@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-13 20:44:12
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-15 12:47:36
+ * @LastEditTime: 2025-06-11 16:47:31
 -->
 <style lang="scss" scoped>
 .TSide {
@@ -22,7 +22,7 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background-color: var(--color-text-muted);
+    background-color: var(--color-icon-bg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -32,13 +32,13 @@
     position: relative;
 
     &:hover {
-      background-color: var(--color-bg-tside-hover);
+      background-color: var(--color-icon-active);
       border-radius: 16px;
       text-decoration: none;
     }
 
     &.active {
-      background-color: var(--color-bg-tside-active);
+      background-color: var(--color-icon-active);
       border-radius: 16px;
 
       &::before {
@@ -118,7 +118,7 @@
         :content="routerInfo.avatarRoute.content"
         :placement="routerInfo.avatarRoute.placement"
       >
-        <img src="@/assets/img/home/avartal.jpg" alt="用户头像" />
+        <img :src="userAvatar" alt="用户头像" />
       </el-tooltip>
     </router-link>
 
@@ -179,6 +179,16 @@
 </template>
 
 <script lang="ts" setup>
+import { useUserStore } from "@/stores/user";
+import { computed } from "vue";
+
+const userStore = useUserStore();
+
+// 计算用户头像，如果没有则使用默认头像
+const userAvatar = computed(() => {
+  return userStore.avatar || "/src/assets/img/home/avartal.jpg";
+});
+
 const routerInfo = {
   avatarRoute: {
     name: "查看个人主页",

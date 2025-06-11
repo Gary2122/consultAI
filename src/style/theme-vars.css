@@ -27,6 +27,13 @@
   --color-active: rgba(255, 255, 255, 0.08);
   --color-message-self: #004fce;
   --color-message-other: #3c3f45;
+  --color-icon-bg: #404040;
+  --color-icon-active: #a6a6a6;
+  --color-list-item-bg: rgba(255, 255, 255, 0.083);
+  --color-list-item-active: #969696a9;
+  --color-header-border: #36393f;
+  --color-container-border: #36393f;
+  --color-card-header: #4d4d4d;
 
   /* Transition duration for theme changes */
   --theme-transition-duration: 0.3s;
@@ -59,6 +66,12 @@ html[data-theme="light"] {
   --color-active: rgba(0, 0, 0, 0.08);
   --color-message-self: #5865f2;
   --color-message-other: #f2f3f5;
+  --color-icon-bg: #404040;
+  --color-icon-active: #a6a6a6;
+  --color-list-item-bg: #34373c;
+  --color-list-item-active: #3c3f45;
+  --color-header-border: #36393f;
+  --color-container-border: #36393f;
 }
 
 /* Purple Theme */
@@ -86,6 +99,12 @@ html[data-theme="purple"] {
   --color-active: rgba(255, 255, 255, 0.08);
   --color-message-self: #8e44ad;
   --color-message-other: #372152;
+  --color-icon-bg: #404040;
+  --color-icon-active: #a6a6a6;
+  --color-list-item-bg: #34373c;
+  --color-list-item-active: #3c3f45;
+  --color-header-border: #36393f;
+  --color-container-border: #36393f;
 }
 
 /* Ocean Theme */
@@ -113,6 +132,12 @@ html[data-theme="ocean"] {
   --color-active: rgba(255, 255, 255, 0.08);
   --color-message-self: #2980b9;
   --color-message-other: #115954;
+  --color-icon-bg: #404040;
+  --color-icon-active: #a6a6a6;
+  --color-list-item-bg: #34373c;
+  --color-list-item-active: #3c3f45;
+  --color-header-border: #36393f;
+  --color-container-border: #36393f;
 }
 
 /* Apply transitions to elements that change with theme */

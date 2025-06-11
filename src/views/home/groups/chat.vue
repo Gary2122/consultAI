@@ -416,6 +416,7 @@ const retryMessage = async (message: any) => {
       content: message.content,
       contentType: message.messageType,
       fileUrl: message.fileUrl,
+      isAnonymous: message.isAnonymous,
     });
   } catch (error) {
     console.error("重试发送消息失败:", error);

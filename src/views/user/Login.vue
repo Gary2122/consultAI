@@ -83,14 +83,16 @@ const handleLogin = () => {
         if (response.success && response.token && response.user) {
           // 确保用户对象和token存在
           const { token, user } = response;
+          console.log("登录成功:", response);
           localStorage.setItem("token", token);
           localStorage.setItem("user", JSON.stringify(user));
 
           userStore.setToken(token);
+          console.log("用户信息:", user);
           userStore.setUserInfo(user);
 
           // 设置用户在线状态
-          userStore.setStatus("online");
+          // userStore.setStatus("online");
 
           // 初始化Socket.IO连接
           socketService.init();

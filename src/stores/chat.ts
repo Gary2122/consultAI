@@ -38,6 +38,7 @@ export interface BackendMessage {
     _id: string;
     username: string;
     avatar: string;
+    anonymousName?: string;
   };
   content: string;
   contentType: "text" | "image";
@@ -54,6 +55,7 @@ export interface BackendMessage {
   createdAt: string;
   updatedAt: string;
   isAnonymous?: boolean;
+  anonymousName?: string;
 }
 
 export interface ChatState {
@@ -180,7 +182,7 @@ export const useChatStore = defineStore("chat", {
             "保持匿名状态: pending消息是匿名的，但新消息没有匿名标记"
           );
           message.isAnonymous = true;
-          message.sender = "匿名用户";
+          message.sender = "善良的鞋子";
           message.avatar = "";
         }
 
@@ -271,7 +273,8 @@ export const useChatStore = defineStore("chat", {
       const isCurrentUser = backendMessage.sender._id === userStore.userId;
       const isGroupMessage = backendMessage.recipientModel === "groups";
       const isAnonymous = !!backendMessage.isAnonymous;
-
+      const anonymousName = backendMessage.sender.anonymousName ?? "匿名";
+      console.log("转换消息格式", backendMessage.sender.anonymousName);
       return {
         _id: backendMessage._id,
         senderId: backendMessage.sender._id,
@@ -280,7 +283,9 @@ export const useChatStore = defineStore("chat", {
         createdAt: backendMessage.createdAt,
         read: backendMessage.readBy.length > 0,
         messageType: backendMessage.contentType,
-        sender: isAnonymous ? "匿名用户" : backendMessage.sender.username,
+        sender: isAnonymous
+          ? backendMessage.sender.username
+          : backendMessage.sender.username,
         avatar: isAnonymous ? "" : backendMessage.sender.avatar,
         fileUrl: backendMessage.fileUrl,
         replyTo: backendMessage.replyTo,

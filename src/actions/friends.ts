@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-05-07 21:23:45
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-15 12:26:04
+ * @LastEditTime: 2025-06-09 16:22:23
  */
 // 搜索用户（根据用户名或者用户邮箱）
 import { isEmpty } from "@/utils/common";
@@ -15,7 +15,7 @@ import {
   acceptFriendRequest,
   rejectFriendRequest,
 } from "@/api/friends";
-import { ElMessage, ElMessageBox } from "element-plus";
+import { ElMessage } from "element-plus";
 // 搜索朋友
 export const searchFriends = async (query: string) => {
   try {
@@ -33,9 +33,7 @@ export const searchFriends = async (query: string) => {
 export const getFriends = async () => {
   try {
     const { data } = await getFriendsList();
-    console.log(data);
     if (isEmpty(data)) {
-      ElMessage.warning("获取朋友列表失败");
       return [];
     }
     return data;

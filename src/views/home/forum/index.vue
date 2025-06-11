@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-29 15:28:06
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-15 12:53:27
+ * @LastEditTime: 2025-06-11 18:10:34
 -->
 <template>
   <div class="forum-container">
@@ -125,8 +125,8 @@
             <div class="post-author">
               <el-avatar
                 :size="36"
-                :src="post.author.avatar"
                 icon="el-icon-user-solid"
+                :src="post.author.avatar || ''"
               ></el-avatar>
               <div class="author-info">
                 <span class="author-name">{{
@@ -176,7 +176,7 @@
               :class="{ active: post.liked }"
               @click="toggleLike(post)"
             >
-              <i class="el-icon-top"></i>
+              <i class="iconfont icon-dianzan"></i>
               <span>{{ post.likes }}</span>
             </div>
             <div
@@ -184,17 +184,17 @@
               :class="{ active: post.disliked }"
               @click="toggleDislike(post)"
             >
-              <i class="el-icon-bottom"></i>
+              <i class="iconfont icon-shoucang"></i>
               <span>{{ post.dislikes }}</span>
             </div>
             <div class="action-btn" @click="toggleComments(post)">
-              <i class="el-icon-chat-dot-round"></i>
+              <i class="iconfont icon-pinglun1"></i>
               <span>{{ post.commentCount || 0 }}</span>
             </div>
-            <div class="action-btn">
-              <i class="el-icon-share"></i>
+            <!-- <div class="action-btn">
+              <i class="iconfont icon-fenxiang"></i>
               <span>分享</span>
-            </div>
+            </div> -->
           </div>
 
           <!-- 评论区 -->
@@ -667,10 +667,10 @@ const toggleComments = async (post: Post) => {
   // 如果是显示评论，并且还没有加载过评论，则加载评论
   if (post.showComments && (!post.comments || post.comments.length === 0)) {
     try {
-      const response = await forumStore.fetchComments(post._id);
-
-      if (response && response.comments && response.comments.length > 0) {
-        post.comments = response.comments;
+      const comments = await forumStore.fetchComments(post._id);
+      console.log(comments);
+      if (comments && comments.length > 0) {
+        post.comments = comments;
       } else if (!post.comments) {
         post.comments = [];
       }
@@ -690,10 +690,10 @@ const toggleComments = async (post: Post) => {
 // 点赞帖子
 const toggleLike = async (post: Post) => {
   try {
-    const success = await forumStore.likePost(post._id);
+    const { success, message } = await forumStore.likePost(post._id);
 
     if (success) {
-      ElMessage.success("点赞成功");
+      ElMessage.success(message);
     } else {
       ElMessage.error("操作失败");
     }

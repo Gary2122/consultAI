@@ -4,18 +4,13 @@
  * @Author: Garrison
  * @Date: 2025-05-06 11:27:30
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-06-08 16:37:11
+ * @LastEditTime: 2025-06-11 17:25:46
 -->
 <template>
   <div class="user-info-container">
     <!-- 头部横幅 -->
     <div class="user-banner">
       <div class="banner-overlay"></div>
-      <div class="edit-banner">
-        <el-tooltip content="更换个性横幅" placement="top">
-          <i class="el-icon-camera"></i>
-        </el-tooltip>
-      </div>
     </div>
 
     <!-- 主要内容区 -->
@@ -41,19 +36,14 @@
             加入于 {{ formatDate(userInfo.registerDate) }}
           </div>
           <div class="user-buttons">
-            <el-button
-              type="primary"
-              size="small"
-              icon="el-icon-chat-dot-round"
-              @click="sendMessage"
+            <el-button type="primary" size="small" @click="sendMessage"
+              ><svg class="iconSize iconColor" aria-hidden="true">
+                <use xlink:href="#icon-tuichu"></use></svg
               >发送消息</el-button
             >
-            <el-button
-              type="default"
-              plain
-              size="small"
-              icon="el-icon-setting"
-              @click="goToSettings"
+            <el-button type="default" plain size="small" @click="goToSettings"
+              ><svg class="iconSize" aria-hidden="true">
+                <use xlink:href="#icon-zhongmingming"></use></svg
               >编辑资料</el-button
             >
           </div>
@@ -318,7 +308,7 @@ import { useRouter, useRoute } from "vue-router";
 import dayjs from "dayjs";
 import { useUserStore } from "@/stores/user";
 import { getUserProfile, updateUserProfile } from "@/api/user";
-import { ElMessage, ElLoading } from "element-plus";
+import { ElMessage } from "element-plus";
 
 const router = useRouter();
 const route = useRoute();
@@ -595,9 +585,8 @@ const goToSettings = () => {
 
 // 发送消息
 const sendMessage = () => {
-  // 如果是查看他人的资料且用户已登录
+  router.push(`/home`);
   if (route.query.userId && userStore.loggedIn) {
-    router.push(`/home/chat?userId=${route.query.userId}`);
   }
 };
 
@@ -608,6 +597,13 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.iconSize {
+  width: 15px;
+  margin-right: 8px;
+}
+.iconColor {
+  fill: #ffffff;
+}
 .user-info-container {
   background-color: var(--color-bg-main);
   color: var(--color-text-normal);
@@ -633,29 +629,6 @@ onMounted(() => {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.3);
-  }
-
-  .edit-banner {
-    position: absolute;
-    right: 20px;
-    bottom: 20px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-
-    i {
-      color: white;
-      font-size: 20px;
-    }
-
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.7);
-    }
   }
 }
 
@@ -746,7 +719,7 @@ onMounted(() => {
     color: white;
     margin: 0;
     padding: 15px;
-    background-color: var(--color-bg-main);
+    background-color: var(--color-card-header);
     display: flex;
     align-items: center;
 

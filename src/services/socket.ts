@@ -23,6 +23,7 @@ interface GroupMessage {
   fileUrl?: string | null;
   replyTo?: string | null;
   isAnonymous?: boolean;
+  anonymousName?: string | null;
 }
 
 // 更新消息结构匹配后端接口
@@ -344,7 +345,8 @@ class SocketService {
     contentType: "text" | "image" | "file" = "text",
     fileUrl: string | null = null,
     replyTo: string | null = null,
-    isAnonymous: boolean = false
+    isAnonymous: boolean = false,
+    anonymousName: string | null = null
   ) {
     if (!this.socket || !this.isConnected.value) {
       console.error("Socket.IO未连接，无法发送群组消息");
@@ -359,6 +361,7 @@ class SocketService {
         content,
         contentType,
         isAnonymous,
+        anonymousName,
       };
 
       // 只在有值的情况下添加可选字段
@@ -469,7 +472,7 @@ class SocketService {
     const isGroupMessage = message.recipientModel === "groups";
     // 判断是否为匿名消息
     const isAnonymous = !!message.isAnonymous;
-
+    console.log("消息是否为群组消息:", message);
     // 尝试适配不同的消息格式
     const messageData = {
       // 必须字段 - 使用适应性获取，兼容不同的数据结构
@@ -495,7 +498,7 @@ class SocketService {
 
       // 发送者信息 - 为匿名消息显示特殊名称
       sender: isAnonymous
-        ? "匿名用户"
+        ? message.anonymousName || "匿名用户"
         : message.sender?.username || message.senderName || "用户",
       avatar: isAnonymous
         ? ""
@@ -611,7 +614,7 @@ class SocketService {
         messageType: message.contentType || message.type || "text",
         // 根据匿名状态设置发送者信息
         sender: isAnonymous
-          ? "匿名用户"
+          ? "善良的鞋子"
           : message.sender?.username || userStore.username || "我",
         avatar: isAnonymous
           ? ""
