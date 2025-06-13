@@ -149,6 +149,14 @@ export const joinPublicGroupApi = async (groupId: string) => {
   });
 };
 
+// 获取用户资料
+export const getUserProfileApi = async (userId: string) => {
+  return request({
+    url: `/api/users/profile/${userId}`,
+    method: "get",
+  });
+};
+
 export default {
   createGroup,
   getUserGroups,

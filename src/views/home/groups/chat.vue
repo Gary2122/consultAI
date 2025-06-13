@@ -1,3 +1,11 @@
+<!--
+ * @Descripttion: 
+ * @version: 
+ * @Author: Garrison
+ * @Date: 2025-05-12 12:23:13
+ * @LastEditors: sueRimn
+ * @LastEditTime: 2025-06-13 08:55:59
+-->
 <template>
   <div
     class="group-chat-container bg-theme-main text-theme-normal"
@@ -60,103 +68,146 @@
                 class="message-container"
                 :class="{ 'self-container': message.isSelf }"
               >
-                <!-- 显示发送者信息 -->
-                <div
-                  v-if="shouldShowSender(message, index) && !message.isSelf"
-                  class="sender-info"
-                >
+                <div class="message-row">
                   <template v-if="message.isAnonymous">
                     <el-avatar
                       :size="36"
                       icon="el-icon-user"
                       class="anonymous-avatar"
                     />
-                    <div class="sender-name anonymous-name">
-                      {{ message.sender }}
-                      <el-tooltip content="匿名消息" placement="top">
-                        <el-tag size="small" effect="dark" class="anonymous-tag"
-                          >匿名</el-tag
-                        >
-                      </el-tooltip>
-                    </div>
                   </template>
                   <template v-else>
-                    <el-avatar
-                      :size="36"
-                      :src="message.avatar || defaultAvatar"
-                    />
-                    <div class="sender-name">{{ message.sender }}</div>
-                  </template>
-                  <div class="message-time">
-                    {{ formatTime(message.createdAt) }}
-                  </div>
-                </div>
-
-                <div
-                  class="message-content"
-                  :class="{
-                    'no-sender':
-                      !shouldShowSender(message, index) && !message.isSelf,
-                    'self-message': message.isSelf,
-                    'anonymous-message': message.isAnonymous,
-                    'message-theme-self': message.isSelf,
-                    'message-theme-other': !message.isSelf,
-                  }"
-                >
-                  <!-- 匿名标记，仅显示在自己发送的匿名消息上 -->
-                  <div
-                    v-if="message.isSelf && message.isAnonymous"
-                    class="anonymous-indicator"
-                  >
-                    <el-tag size="small" effect="dark" class="anonymous-tag"
-                      >匿名</el-tag
+                    <el-popover
+                      placement="right"
+                      :width="300"
+                      trigger="hover"
+                      popper-class="user-info-popover"
+                      @show="fetchUserProfile(message.senderId)"
                     >
-                  </div>
+                      <template #reference>
+                        <el-avatar
+                          :size="36"
+                          :src="message.avatar || defaultAvatar"
+                        />
+                      </template>
+                      <div class="user-info-card">
+                        <div class="user-header">
+                          <el-avatar
+                            :size="64"
+                            :src="message.avatar || defaultAvatar"
+                          />
+                          <div class="user-details">
+                            <h3>{{ message.sender }}</h3>
+                            <p class="user-id">ID: {{ message.senderId }}</p>
+                          </div>
+                        </div>
+                        <div class="user-stats">
+                          <div class="stat-item">
+                            <span class="label">加入时间</span>
+                            <span class="value">{{
+                              formatFullDate(
+                                message.senderJoinTime ||
+                                  currentGroup?.createdAt
+                              )
+                            }}</span>
+                          </div>
+                          <template v-if="userProfiles.get(message.senderId)">
+                            <div class="stat-item">
+                              <span class="label">MBTI</span>
+                              <span class="value">{{
+                                userProfiles.get(message.senderId).assessments
+                                  ? userProfiles.get(message.senderId)
+                                      .assessments
+                                  : "暂无"
+                              }}</span>
+                            </div>
+                            <div class="stat-item">
+                              <span class="label">性格标签</span>
+                              <div class="tags-container">
+                                <div
+                                  v-if="
+                                    userProfiles.get(message.senderId).tags
+                                      ?.length
+                                  "
+                                >
+                                  <el-tag
+                                    v-for="tag in userProfiles.get(
+                                      message.senderId
+                                    ).tags"
+                                    :key="tag"
+                                    size="small"
+                                    class="personality-tag"
+                                  >
+                                    {{ tag.name }}
+                                  </el-tag>
+                                </div>
+                                <div v-else>暂无</div>
+                              </div>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+                    </el-popover>
+                  </template>
 
-                  <div
-                    v-if="message.messageType === 'text'"
-                    class="text-content"
-                  >
-                    {{ message.content }}
+                  <div class="message-info">
+                    <div class="message-header">
+                      <span
+                        class="sender-name"
+                        :class="{ 'anonymous-name': message.isAnonymous }"
+                      >
+                        {{
+                          message.isAnonymous && message.isSelf
+                            ? message.anonymousName
+                            : message.sender
+                        }}
+                        <el-tag
+                          v-if="message.isAnonymous"
+                          size="small"
+                          effect="dark"
+                          class="anonymous-tag"
+                          >匿名</el-tag
+                        >
+                      </span>
+                      <span class="message-time">{{
+                        formatTime(message.createdAt)
+                      }}</span>
+                    </div>
+                    <div class="message-bubble">
+                      <div
+                        class="message-content"
+                        :class="{
+                          'self-message': message.isSelf,
+                          'anonymous-message': message.isAnonymous,
+                        }"
+                      >
+                        <div
+                          v-if="message.messageType === 'text'"
+                          class="text-content"
+                        >
+                          {{ message.content }}
+                        </div>
+                        <div
+                          v-else-if="message.messageType === 'image'"
+                          class="image-content"
+                        >
+                          <img
+                            :src="message.fileUrl || ''"
+                            @click="
+                              message.fileUrl
+                                ? previewImage(message.fileUrl)
+                                : null
+                            "
+                          />
+                        </div>
+                        <div v-else class="file-content">
+                          <a :href="message.fileUrl || ''" target="_blank">
+                            <i class="el-icon-document"></i> 文件
+                          </a>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div
-                    v-else-if="message.messageType === 'image'"
-                    class="image-content"
-                  >
-                    <img
-                      :src="message.fileUrl || ''"
-                      @click="
-                        message.fileUrl ? previewImage(message.fileUrl) : null
-                      "
-                    />
-                  </div>
-                  <div v-else class="file-content">
-                    <a :href="message.fileUrl || ''" target="_blank">
-                      <i class="el-icon-document"></i> 文件
-                    </a>
-                  </div>
-
-                  <div v-if="message.pending" class="status-icon pending">
-                    <i class="el-icon-loading"></i>
-                  </div>
-                  <div v-else-if="message.failed" class="status-icon failed">
-                    <i class="el-icon-warning-outline"></i>
-                  </div>
-
-                  <div v-if="message.isSelf" class="self-message-time">
-                    {{ formatTime(message.createdAt) }}
-                  </div>
-                </div>
-
-                <!-- 失败消息的重试按钮 -->
-                <div
-                  v-if="message.failed"
-                  class="retry-button"
-                  :class="{ 'self-retry': message.isSelf }"
-                >
-                  <el-button size="mini" @click="retryMessage(message)"
-                    >重试</el-button
-                  >
                 </div>
               </div>
             </div>
@@ -288,16 +339,15 @@ import { ref, computed, onMounted, nextTick, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useGroupStore } from "@/stores/group";
 import { useChatStore } from "@/stores/chat";
-import { useUserStore } from "@/stores/user";
 import { ElMessage, ElScrollbar } from "element-plus";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale/zh-CN";
 import { QuestionFilled } from "@element-plus/icons-vue";
+import axios from "axios";
 
 const route = useRoute();
 const groupStore = useGroupStore();
 const chatStore = useChatStore();
-const userStore = useUserStore();
 
 // 状态变量
 const loading = ref(false);
@@ -309,6 +359,9 @@ const imageInput = ref<HTMLInputElement | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const defaultAvatar = "/default-avatar.png";
 const isAnonymous = ref(false);
+
+// 添加用户资料相关的状态
+const userProfiles = ref(new Map());
 
 // 获取路由参数中的群组ID
 const groupId = computed(() => route.params.id as string);
@@ -398,28 +451,6 @@ const sendMessage = async () => {
   } catch (error) {
     console.error("发送消息失败:", error);
     ElMessage.error("发送消息失败，请重试");
-  }
-};
-
-// 重试发送失败的消息
-const retryMessage = async (message: any) => {
-  if (!groupId.value) return;
-
-  try {
-    chatStore.retryMessage({
-      chatId: groupId.value,
-      messageId: message._id,
-    });
-
-    await groupStore.sendGroupMessage({
-      groupId: groupId.value,
-      content: message.content,
-      contentType: message.messageType,
-      fileUrl: message.fileUrl,
-      isAnonymous: message.isAnonymous,
-    });
-  } catch (error) {
-    console.error("重试发送消息失败:", error);
   }
 };
 
@@ -519,26 +550,6 @@ const shouldShowDateDivider = (message: any, index: number) => {
   return !isSameDay(currentDate, prevDate);
 };
 
-// 判断是否应该显示发送者信息
-const shouldShowSender = (message: any, index: number) => {
-  if (index === 0) return true;
-
-  const prevMessage = messages.value[index - 1];
-
-  // 如果是新的一天，显示发送者
-  if (shouldShowDateDivider(message, index)) return true;
-
-  // 如果与上一条消息发送者不同，显示发送者
-  if (prevMessage.senderId !== message.senderId) return true;
-
-  // 如果与上一条消息间隔超过5分钟，显示发送者
-  const currentTime = new Date(message.createdAt).getTime();
-  const prevTime = new Date(prevMessage.createdAt).getTime();
-  const fiveMinutes = 5 * 60 * 1000;
-
-  return currentTime - prevTime > fiveMinutes;
-};
-
 // 获取创建者名称
 const getCreatorName = () => {
   if (!currentGroup.value?.creator) return "未知";
@@ -606,6 +617,29 @@ const filterDuplicateMessages = (messages: any[]) => {
     }
     return true;
   });
+};
+
+// 获取发送者的消息数量
+const getSenderMessageCount = (senderId: string) => {
+  return messages.value.filter((msg) => msg.senderId === senderId).length;
+};
+
+// 获取用户资料
+const fetchUserProfile = async (userId: string) => {
+  if (userProfiles.value.has(userId)) {
+    return userProfiles.value.get(userId);
+  }
+
+  try {
+    const userProfile = await groupStore.getUserProfile(userId);
+    if (userProfile) {
+      userProfiles.value.set(userId, userProfile);
+      return userProfile;
+    }
+  } catch (error) {
+    console.error("获取用户资料失败:", error);
+  }
+  return null;
 };
 
 // 组件挂载时初始化
@@ -745,125 +779,128 @@ onMounted(async () => {
       }
 
       .message-container {
-        display: flex;
-        flex-direction: column;
-        max-width: 75%;
+        margin-bottom: 16px;
+        width: 100%;
 
         &.self-container {
-          align-items: flex-end;
-          align-self: flex-end;
-        }
-      }
+          .message-row {
+            flex-direction: row-reverse;
 
-      .sender-info {
-        display: flex;
-        align-items: center;
-        margin-top: 8px;
-        margin-bottom: 4px;
+            .message-info {
+              margin-left: 0;
+              margin-right: 12px;
+              align-items: flex-end;
 
-        .sender-name {
-          margin-left: 8px;
-          font-weight: 500;
-          color: var(--color-text-normal);
-        }
+              .message-header {
+                flex-direction: row-reverse;
+              }
 
-        .message-time {
-          margin-left: 8px;
-          font-size: 11px;
-          color: var(--color-text-muted);
-        }
-      }
-
-      .message-content {
-        padding: 8px 12px;
-        border-radius: 4px;
-        background-color: var(--color-message-other);
-        color: var(--color-text-normal);
-        word-break: break-word;
-        position: relative;
-        margin-bottom: 2px;
-
-        &.self-message {
-          background-color: var(--color-message-self);
-          border-radius: 8px 0 8px 8px;
-          color: white;
-        }
-
-        .text-content {
-          white-space: pre-wrap;
-          padding-right: 24px; // 为时间戳留出空间
-        }
-
-        .image-content {
-          img {
-            max-width: 280px;
-            max-height: 280px;
-            border-radius: 4px;
-            cursor: pointer;
-          }
-        }
-
-        .file-content {
-          a {
-            color: var(--color-text-link);
-            text-decoration: none;
-
-            &:hover {
-              text-decoration: underline;
+              .message-content {
+                background-color: #5c7cfa;
+                color: white;
+                border-radius: 8px;
+              }
             }
           }
         }
 
-        .status-icon {
-          position: absolute;
-          right: -24px;
-          bottom: 0;
-          font-size: 14px;
-
-          &.pending {
-            color: #faa61a;
-          }
-
-          &.failed {
-            color: #ed4245;
-          }
-        }
-
-        .self-message-time {
-          font-size: 10px;
-          color: rgba(255, 255, 255, 0.7);
-          position: absolute;
-          right: 8px;
-          bottom: 4px;
-        }
-
-        &.anonymous-message {
-          background-color: #363636;
-        }
-
-        .anonymous-indicator {
-          margin-bottom: 4px;
+        .message-row {
           display: flex;
-          justify-content: flex-end;
+          align-items: flex-start;
+        }
 
-          .anonymous-tag {
-            background-color: #606266;
-            font-size: 10px;
-            padding: 0 4px;
-            height: 16px;
-            line-height: 16px;
+        .message-info {
+          margin-left: 12px;
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+          max-width: 70%;
+        }
+
+        .message-header {
+          display: flex;
+          align-items: center;
+          margin-bottom: 4px;
+          gap: 8px;
+          padding: 0 2px;
+
+          .sender-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--color-text-normal);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            min-width: 0;
+
+            &.anonymous-name {
+              color: #909399;
+            }
+
+            .anonymous-tag {
+              background-color: #606266;
+              font-size: 10px;
+              padding: 0 4px;
+              height: 16px;
+              line-height: 16px;
+              margin-left: 4px;
+              flex-shrink: 0;
+            }
+          }
+
+          .message-time {
+            font-size: 12px;
+            color: #909399;
+            flex-shrink: 0;
           }
         }
-      }
 
-      .retry-button {
-        margin-top: 2px;
-        margin-left: 44px;
+        .message-bubble {
+          display: inline-block;
+          max-width: 100%;
+        }
 
-        &.self-retry {
-          align-self: flex-end;
-          margin-left: 0;
-          margin-right: 0;
+        .message-content {
+          background-color: #2f3136;
+          padding: 8px 12px;
+          border-radius: 8px;
+          word-break: break-word;
+          display: inline-block;
+          max-width: 100%;
+
+          &.anonymous-message {
+            background-color: #363636;
+          }
+
+          .text-content {
+            font-size: 14px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+          }
+
+          .image-content {
+            img {
+              max-width: 280px;
+              max-height: 280px;
+              border-radius: 4px;
+              cursor: pointer;
+              display: block;
+            }
+          }
+
+          .file-content {
+            a {
+              color: inherit;
+              text-decoration: none;
+              display: inline-flex;
+              align-items: center;
+              gap: 4px;
+
+              &:hover {
+                text-decoration: underline;
+              }
+            }
+          }
         }
       }
     }
@@ -1017,20 +1054,80 @@ onMounted(async () => {
 
 .anonymous-avatar {
   background-color: #909399;
-  color: #ffffff;
 }
 
-.anonymous-name {
-  display: flex;
-  align-items: center;
+.user-info-popover {
+  background-color: var(--color-bg-main);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 
-  .anonymous-tag {
-    margin-left: 4px;
-    background-color: #606266;
-    font-size: 10px;
-    padding: 0 4px;
-    height: 16px;
-    line-height: 16px;
+  .user-info-card {
+    padding: 16px;
+
+    .user-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+
+      .user-details {
+        margin-left: 16px;
+
+        h3 {
+          margin: 0 0 4px;
+          font-size: 18px;
+          color: var(--color-text-normal);
+        }
+
+        .user-id {
+          margin: 0;
+          font-size: 12px;
+          color: var(--color-text-muted);
+        }
+      }
+    }
+
+    .user-stats {
+      .stat-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--color-border);
+
+        &:last-child {
+          margin-bottom: 0;
+          border-bottom: none;
+        }
+
+        .label {
+          color: var(--color-text-muted);
+          font-size: 14px;
+        }
+
+        .value {
+          color: var(--color-text-normal);
+          font-size: 14px;
+        }
+      }
+
+      .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 4px;
+
+        .personality-tag {
+          background-color: var(--color-bg-tertiary);
+          border: none;
+          color: var(--color-text-normal);
+          font-size: 12px;
+          padding: 0 8px;
+          height: 20px;
+          line-height: 20px;
+        }
+      }
+    }
   }
 }
 </style>

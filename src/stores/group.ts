@@ -256,6 +256,19 @@ export const useGroupStore = defineStore("group", {
       }
     },
 
+    async getUserProfile(userId: string) {
+      const userStore = useUserStore();
+      this.error = null;
+      try {
+        const userProfile = await groupApi.getUserProfileApi(userId);
+        console.log("userProfile", userProfile);
+        return userProfile.data;
+      } catch (error: any) {
+        this.error = error.response?.data?.message || "获取用户资料失败";
+        throw error;
+      }
+    },
+
     // 发送群组消息
     async sendGroupMessage({
       groupId,

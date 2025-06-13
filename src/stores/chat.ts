@@ -29,6 +29,7 @@ export interface Message {
   isGroupMessage?: boolean; // 是否为群组消息
   forceRender?: boolean; // 强制渲染标记
   isAnonymous?: boolean; // 是否为匿名消息
+  anonymousName?: string;
 }
 
 // 后端消息结构
@@ -182,7 +183,7 @@ export const useChatStore = defineStore("chat", {
             "保持匿名状态: pending消息是匿名的，但新消息没有匿名标记"
           );
           message.isAnonymous = true;
-          message.sender = "善良的鞋子";
+          message.sender = useUserStore().anonymousName;
           message.avatar = "";
         }
 
@@ -273,7 +274,7 @@ export const useChatStore = defineStore("chat", {
       const isCurrentUser = backendMessage.sender._id === userStore.userId;
       const isGroupMessage = backendMessage.recipientModel === "groups";
       const isAnonymous = !!backendMessage.isAnonymous;
-      const anonymousName = backendMessage.sender.anonymousName ?? "匿名";
+      const anonymousName = backendMessage.anonymousName ?? "匿名的袜子";
       console.log("转换消息格式", backendMessage.sender.anonymousName);
       return {
         _id: backendMessage._id,
@@ -295,6 +296,7 @@ export const useChatStore = defineStore("chat", {
         isNewReceived: false,
         isGroupMessage: isGroupMessage, // 标记是否为群组消息
         isAnonymous: isAnonymous, // 匿名消息标记
+        anonymousName: anonymousName,
       };
     },
 

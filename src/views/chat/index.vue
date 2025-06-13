@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-14 19:34:51
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-23 11:54:59
+ * @LastEditTime: 2025-06-13 09:03:01
 -->
 <template>
   <div class="chat-container overflow-hidden h-full">
@@ -26,20 +26,6 @@
             {{ chatStatus }}
           </div>
         </div>
-      </div>
-      <div class="chat-actions">
-        <el-tooltip content="语音通话" placement="bottom">
-          <i class="iconfont icon-zizhanghao"></i>
-        </el-tooltip>
-        <el-tooltip content="视频通话" placement="bottom">
-          <i class="iconfont icon-zizhanghao"></i>
-        </el-tooltip>
-        <el-tooltip content="搜索" placement="bottom">
-          <i class="iconfont icon-zizhanghao"></i>
-        </el-tooltip>
-        <el-tooltip content="更多" placement="bottom">
-          <i class="iconfont icon-zizhanghao"></i>
-        </el-tooltip>
       </div>
     </div>
 
@@ -119,12 +105,12 @@
       </div>
     </el-scrollbar>
     <!-- 输入框区域 -->
-    <div class="chat-input-area">
-      <div class="attachment-actions">
+    <div class="chat-input-area flex-cc mb-12 mt-12">
+      <!-- <div class="attachment-actions">
         <el-tooltip content="添加附件" placement="top">
           <i class="el-icon-plus"></i>
         </el-tooltip>
-      </div>
+      </div> -->
       <div class="message-input">
         <el-input
           v-model="messageText"
@@ -137,7 +123,10 @@
           @input="handleTyping"
         />
       </div>
-      <div class="send-actions">
+      <div class="flex-end">
+        <el-button type="primary" @click="sendMessage">发送</el-button>
+      </div>
+      <!-- <div class="send-actions">
         <el-tooltip content="表情" placement="top">
           <i class="el-icon-magic-stick"></i>
         </el-tooltip>
@@ -147,8 +136,9 @@
             :class="{ disabled: !hasChatTarget }"
             @click="sendMessage"
           ></i>
+          <el-button type="primary" @click="sendMessage">发送</el-button>
         </el-tooltip>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>
@@ -768,21 +758,6 @@ onBeforeUnmount(() => {
         margin-left: 12px;
         font-size: 12px;
         color: var(--color-text-muted);
-      }
-    }
-
-    .chat-actions {
-      display: flex;
-      gap: 16px;
-
-      i {
-        font-size: 20px;
-        color: var(--color-text-muted);
-        cursor: pointer;
-
-        &:hover {
-          color: var(--color-text-normal);
-        }
       }
     }
   }

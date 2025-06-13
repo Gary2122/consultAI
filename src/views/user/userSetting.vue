@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-30 16:12:37
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-06-11 10:43:50
+ * @LastEditTime: 2025-06-13 08:33:15
 -->
 <template>
   <div class="user-settings-container">
@@ -43,10 +43,7 @@
       </el-menu>
 
       <div class="account-info">
-        <el-avatar
-          :size="42"
-          src="/src/assets/img/home/avartal.jpg"
-        ></el-avatar>
+        <el-avatar :size="42" :src="userInfo.avatar"></el-avatar>
         <div class="user-details">
           <div class="username">{{ userInfo.username }}</div>
           <div class="user-id">ID: {{ userInfo.id }}</div>

@@ -614,7 +614,7 @@ class SocketService {
         messageType: message.contentType || message.type || "text",
         // 根据匿名状态设置发送者信息
         sender: isAnonymous
-          ? "善良的鞋子"
+          ? userStore.anonymousName
           : message.sender?.username || userStore.username || "我",
         avatar: isAnonymous
           ? ""
