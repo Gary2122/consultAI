@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-28 14:25:41
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-05-23 12:07:52
+ * @LastEditTime: 2025-06-13 13:57:47
 -->
 <template>
   <div class="ai-chat-container">
@@ -52,7 +52,10 @@
     <!-- 聊天头部 -->
     <div class="chat-header">
       <div class="ai-info">
-        <el-avatar :size="40" src="/src/assets/img/home/avartal.jpg" />
+        <el-avatar
+          :size="40"
+          src="https://picx.zhimg.com/v2-7dd4cadc93d5648681d063e9d56e94ef_1440w.jpg"
+        />
         <div>
           <div class="ai-name">心理AI助手</div>
           <div class="ai-status">
@@ -61,25 +64,20 @@
           </div>
         </div>
       </div>
-      <div class="header-actions">
+      <div class="header-actions flex-cc">
         <el-tooltip content="历史会话" placement="bottom">
-          <el-button type="text" icon="el-icon-time" @click="showHistory = true"
-            >历史对话
+          <el-button type="text" @click="showHistory = true"
+            ><i class="iconfont icon-lishijilu !fs-24"></i>历史对话
           </el-button>
-          >
         </el-tooltip>
         <el-tooltip content="清空对话" placement="bottom">
-          <el-button
-            type="text"
-            icon="el-icon-delete"
-            @click="clearConversation"
+          <el-button type="text" @click="clearConversation"
+            ><i class="iconfont icon-ic_qingkong !fs-20"></i
           ></el-button>
         </el-tooltip>
         <el-tooltip content="设置" placement="bottom">
-          <el-button
-            type="text"
-            icon="el-icon-setting"
-            @click="showSettings = true"
+          <el-button type="text" @click="showSettings = true"
+            ><i class="iconfont icon-xitongshezhi !fs-22"></i
           ></el-button>
         </el-tooltip>
       </div>
@@ -90,7 +88,7 @@
       <!-- 欢迎消息 -->
       <div class="welcome-message" v-if="messages.length === 0">
         <img
-          src="/src/assets/img/home/avartal.jpg"
+          src="https://picx.zhimg.com/v2-7dd4cadc93d5648681d063e9d56e94ef_1440w.jpg"
           alt="AI助手"
           class="welcome-img"
         />
@@ -121,8 +119,8 @@
               :size="36"
               :src="
                 msg.isUser
-                  ? '/src/assets/img/home/avartal.jpg'
-                  : '/src/assets/img/home/avartal.jpg'
+                  ? userStore.avatar
+                  : 'https://picx.zhimg.com/v2-7dd4cadc93d5648681d063e9d56e94ef_1440w.jpg'
               "
             />
           </div>
@@ -227,6 +225,7 @@
 import { ref, onMounted, nextTick } from "vue";
 import { ElMessage } from "element-plus";
 import { marked } from "marked";
+import { useUserStore } from "@/stores/user";
 
 // 消息类型定义
 interface Message {
@@ -254,6 +253,7 @@ const showHistory = ref(false);
 const historySessions = ref<Session[]>([]);
 const currentSessionId = ref<string>("");
 const isAnonymous = ref(false);
+const userStore = useUserStore();
 
 // AI设置
 const aiModel = ref("psychology-expert");
@@ -280,7 +280,7 @@ const handleAnonymousChange = (value: boolean) => {
 };
 
 // 创建新会话
-const createNewSession = () => {
+const createNewSession = async () => {
   if (isAnonymous.value) {
     // 匿名模式下不创建会话记录
     currentSessionId.value = "";
@@ -292,17 +292,40 @@ const createNewSession = () => {
     return;
   }
 
-  const sessionId = Date.now().toString();
-  const newSession: Session = {
-    id: sessionId,
-    title: "新会话",
-    time: new Date().toLocaleString("zh-CN"),
-    messages: [],
-  };
-  historySessions.value.unshift(newSession);
-  currentSessionId.value = sessionId;
-  messages.value = [];
-  return sessionId;
+  try {
+    // 创建新会话
+    const response = await fetch("http://localhost:3000/api/ai-chat/sessions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        title: "新会话",
+        messages: [],
+        tags: [],
+      }),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      const newSession: Session = {
+        id: result.id,
+        title: "新会话",
+        time: new Date().toLocaleString("zh-CN"),
+        messages: [],
+      };
+      historySessions.value.unshift(newSession);
+      currentSessionId.value = result.id;
+      messages.value = [];
+      return result.id;
+    }
+  } catch (error) {
+    console.error("Failed to create new session:", error);
+    ElMessage.error("创建新会话失败");
+  }
+  return "";
 };
 
 // 加载会话
@@ -345,7 +368,9 @@ const saveSession = async () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
+        credentials: "include",
         body: JSON.stringify(session),
       });
     } catch (error) {
@@ -406,7 +431,9 @@ const sendMessage = async () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
+      credentials: "include",
       body: JSON.stringify({ messages: messageHistory }),
     });
 
@@ -505,7 +532,14 @@ const scrollToBottom = async () => {
 onMounted(async () => {
   // 加载历史会话
   try {
-    const response = await fetch("http://localhost:3000/api/ai-chat/sessions");
+    const response = await fetch("http://localhost:3000/api/ai-chat/sessions", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      credentials: "include",
+    });
     if (response.ok) {
       const sessions = await response.json();
       historySessions.value = sessions;

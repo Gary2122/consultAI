@@ -4,7 +4,7 @@
  * @Author: Garrison
  * @Date: 2025-04-29 15:28:06
  * @LastEditors: sueRimn
- * @LastEditTime: 2025-06-11 18:10:34
+ * @LastEditTime: 2025-06-13 13:49:59
 -->
 <template>
   <div class="forum-container">
@@ -30,7 +30,8 @@
         <div class="tag-filter">
           <el-popover placement="bottom" trigger="click" width="300">
             <template #reference>
-              <el-button size="small" icon="el-icon-collection-tag">
+              <el-button size="small">
+                <i class="iconfont icon-fenlei !fs-14 mr-6"></i>
                 话题分类
               </el-button>
             </template>
@@ -118,7 +119,7 @@
         <div
           v-for="post in filteredPosts"
           :key="post._id"
-          class="post-card gradient-border"
+          class="post-card"
           :data-post-id="post._id"
         >
           <div class="post-header">
@@ -382,6 +383,7 @@ import dayjs from "dayjs";
 import { useUserStore } from "@/stores/user";
 import { useForumStore } from "@/stores/forum";
 import { useRoute } from "vue-router";
+import "@/style/rainbow-border.scss";
 
 // 路由信息
 const route = useRoute();
@@ -990,12 +992,55 @@ onBeforeUnmount(() => {
     padding: 16px;
     margin-bottom: 16px;
   }
+  .rainbow-border-box {
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    overflow: visible !important;
+  }
 
+  .rainbow-border-box::before {
+    content: "";
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    background: linear-gradient(
+      45deg,
+      #ff0000,
+      #ff7300,
+      #fffb00,
+      #48ff00,
+      #00ffd5,
+      #002bff,
+      #7a00ff,
+      #ff00c8,
+      #ff0000
+    );
+    background-size: 400%;
+    border-radius: 22px;
+    z-index: -1;
+    animation: glowing-border 3s linear infinite;
+    filter: blur(8px);
+  }
+
+  @keyframes glowing-border {
+    0% {
+      background-position: 0 0;
+    }
+    50% {
+      background-position: 100% 100%;
+    }
+    100% {
+      background-position: 0 0;
+    }
+  }
   .post-card {
     background-color: var(--color-bg-main);
     border-radius: 5px;
     padding: 16px;
     margin-bottom: 16px;
+    border: 1px solid yellow;
 
     .post-header {
       display: flex;
